@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type ChangeEvent } from 'react';
 import {
   getMeuPerfil,
   getFilmesCurtidos,
+  salvarAvatar,
   ApiError,
   type FilmeResumo,
   type Perfil,
@@ -12,8 +13,52 @@ type Props = {
   onSair: () => void;
 };
 
+const TAMANHO_AVATAR = 256;
+
 function mensagemDoErro(err: unknown, padrao: string) {
   return err instanceof ApiError ? err.message : padrao;
+}
+
+/**
+ * Recorta o quadrado central e reduz para 256px antes de enviar. A foto viaja como
+ * data URL e é guardada assim no banco — mandar o arquivo original, de vários MB,
+ * estouraria o limite de corpo da API e encheria o banco à toa.
+ */
+async function prepararFoto(arquivo: File): Promise<string> {
+  const url = URL.createObjectURL(arquivo);
+
+  try {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const imagem = new Image();
+      imagem.onload = () => resolve(imagem);
+      imagem.onerror = () => reject(new Error('Não foi possível ler esta imagem.'));
+      imagem.src = url;
+    });
+
+    const lado = Math.min(img.width, img.height);
+    const canvas = document.createElement('canvas');
+    canvas.width = TAMANHO_AVATAR;
+    canvas.height = TAMANHO_AVATAR;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('Não foi possível processar a imagem.');
+
+    ctx.drawImage(
+      img,
+      (img.width - lado) / 2,
+      (img.height - lado) / 2,
+      lado,
+      lado,
+      0,
+      0,
+      TAMANHO_AVATAR,
+      TAMANHO_AVATAR
+    );
+
+    return canvas.toDataURL('image/jpeg', 0.85);
+  } finally {
+    URL.revokeObjectURL(url);
+  }
 }
 
 /** Menu do usuário — sobrepõe a tela atual, não substitui. */
@@ -23,6 +68,10 @@ export function MenuUsuario({ onFechar, onSair }: Props) {
   const [temMais, setTemMais] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const [erroPagina, setErroPagina] = useState<string | null>(null);
+  const [enviandoFoto, setEnviandoFoto] = useState(false);
+  const [erroFoto, setErroFoto] = useState<string | null>(null);
+
+  const arquivoRef = useRef<HTMLInputElement | null>(null);
 
   // Cursor da próxima página e trava de concorrência: nenhum dos dois afeta a
   // renderização, então ficam em ref pra não disparar efeito à toa.
@@ -88,6 +137,30 @@ export function MenuUsuario({ onFechar, onSair }: Props) {
     return () => window.removeEventListener('keydown', aoTeclar);
   }, [onFechar]);
 
+  async function aoEscolherFoto(evento: ChangeEvent<HTMLInputElement>) {
+    const arquivo = evento.target.files?.[0];
+    // Zera o input: sem isso, escolher o MESMO arquivo de novo não dispara `change`.
+    evento.target.value = '';
+    if (!arquivo) return;
+
+    if (!arquivo.type.startsWith('image/')) {
+      setErroFoto('Escolha um arquivo de imagem.');
+      return;
+    }
+
+    setEnviandoFoto(true);
+    setErroFoto(null);
+
+    try {
+      const { avatarUrl } = await salvarAvatar(await prepararFoto(arquivo));
+      setPerfil((atual) => (atual ? { ...atual, user: { ...atual.user, avatarUrl } } : atual));
+    } catch (err) {
+      setErroFoto(mensagemDoErro(err, 'Não foi possível salvar a foto.'));
+    } finally {
+      setEnviandoFoto(false);
+    }
+  }
+
   // Acima de 10 a lista passa a rolar dentro do menu, em vez de esticar a tela.
   const precisaRolar = curtidos.length > 10;
   const carregandoPrimeiraPagina = curtidos.length === 0 && temMais && !erroPagina;
@@ -105,13 +178,36 @@ export function MenuUsuario({ onFechar, onSair }: Props) {
         onClick={(e) => e.stopPropagation()}
       >
         <header className="flex items-start gap-4 p-5 border-b border-white/10">
-          {/*
-            Espaço reservado para a foto de perfil.
-            Quando o avatar existir: adicionar `avatarUrl` ao model User e ao retorno de
-            GET /me/profile, e trocar este círculo por
-              <img src={perfil.avatarUrl} alt="" className="w-full h-full object-cover" />
-          */}
-          <div className="w-16 h-16 rounded-full bg-white shrink-0" aria-hidden="true" />
+          {/* Clicar na foto abre o seletor de arquivos do sistema. */}
+          <div className="shrink-0 w-16">
+            <button
+              type="button"
+              onClick={() => arquivoRef.current?.click()}
+              disabled={enviandoFoto}
+              aria-label="Escolher foto de perfil"
+              className="block w-16 h-16 rounded-full bg-white overflow-hidden"
+            >
+              {perfil?.user.avatarUrl && (
+                <img src={perfil.user.avatarUrl} alt="" className="w-full h-full object-cover" />
+              )}
+            </button>
+
+            <p
+              className={`mt-1 text-center text-[10px] leading-tight ${
+                erroFoto ? 'text-rose-300' : 'text-white/40'
+              }`}
+            >
+              {erroFoto ?? (enviandoFoto ? 'Enviando...' : 'Clique para alterar')}
+            </p>
+
+            <input
+              ref={arquivoRef}
+              type="file"
+              accept="image/*"
+              onChange={aoEscolherFoto}
+              className="hidden"
+            />
+          </div>
 
           <div className="min-w-0 flex-1">
             <p className="font-display text-xl truncate">
