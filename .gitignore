@@ -2,3 +2,7 @@ node_modules/
 dist/
 .env
 .DS_Store
+
+# Instruções e configuração locais do Claude Code — ficam na máquina, fora do repositório.
+CLAUDE.md
+.claude/
