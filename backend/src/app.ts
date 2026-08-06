@@ -21,9 +21,9 @@ function origensPermitidas(): string[] | true {
 }
 
 /**
- * Monta a aplicação sem escutar porta. Quem chama decide o que fazer com ela:
- * `src/index.ts` sobe um servidor (local e Docker) e `api/index.ts` entrega as
- * requisições que chegam pela Vercel, onde não existe processo escutando porta.
+ * Monta a aplicação sem escutar porta — quem sobe o servidor é `src/index.ts`.
+ * A separação existe para que a montagem possa ser reaproveitada (teste, script,
+ * outro adaptador) sem que ninguém precise abrir uma porta para isso.
  */
 export async function construirApp() {
   if (!process.env.AUTH_SECRET) {
