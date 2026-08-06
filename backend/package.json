@@ -22,8 +22,8 @@
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.115.0",
     "@fastify/cors": "^9.0.1",
+    "@google/genai": "^2.16.0",
     "@prisma/client": "^5.18.0",
     "dotenv": "^16.4.5",
     "fastify": "^4.28.1",

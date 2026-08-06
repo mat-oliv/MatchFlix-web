@@ -1,10 +1,10 @@
-import Anthropic from '@anthropic-ai/sdk';
+import { GoogleGenAI } from '@google/genai';
 
 /**
- * Modelo do assistente de dúvidas. Haiku é o mais barato da família e sobra para
- * responder perguntas sobre um app pequeno — trocar por um maior é trocar esta string.
+ * Modelo do assistente de dúvidas. O Flash é o mais barato da família e é o que a camada
+ * gratuita do Gemini oferece — trocar por um maior é trocar esta string.
  */
-const MODELO = 'claude-haiku-4-5-20251001';
+const MODELO = 'gemini-2.5-flash';
 
 /** Teto de tamanho da resposta. Dúvida de app se responde em um parágrafo. */
 const MAX_TOKENS = 400;
@@ -67,26 +67,29 @@ export type FalaDoChat = {
 /** Erro de configuração do assistente — vira 503, não 500, porque é falta de setup. */
 export class AssistenteIndisponivel extends Error {}
 
-let cliente: Anthropic | undefined;
+let cliente: GoogleGenAI | undefined;
 
 /**
  * O cliente nasce na primeira pergunta, não na subida do servidor: sem isso, um deploy
- * sem `ANTHROPIC_API_KEY` derrubaria a API inteira em vez de deixar só o chat de fora.
+ * sem `GEMINI_API_KEY` derrubaria a API inteira em vez de deixar só o chat de fora.
  */
-function obterCliente(): Anthropic {
-  const chave = process.env.ANTHROPIC_API_KEY;
+function obterCliente(): GoogleGenAI {
+  const chave = process.env.GEMINI_API_KEY;
 
   if (!chave) {
-    throw new AssistenteIndisponivel('ANTHROPIC_API_KEY não configurada.');
+    throw new AssistenteIndisponivel('GEMINI_API_KEY não configurada.');
   }
 
-  cliente ??= new Anthropic({ apiKey: chave });
-  return cliente;
-}
+  cliente ??= new GoogleGenAI({
+    apiKey: chave,
+    // Só para desenvolvimento: apontar para um servidor local permite exercitar a rota
+    // inteira sem chave e sem consumir a cota. Vazio em produção.
+    ...(process.env.GEMINI_BASE_URL
+      ? { httpOptions: { baseUrl: process.env.GEMINI_BASE_URL } }
+      : {}),
+  });
 
-/** True se dá para responder — usado para o app não oferecer um chat que não funciona. */
-export function assistenteConfigurado(): boolean {
-  return Boolean(process.env.ANTHROPIC_API_KEY);
+  return cliente;
 }
 
 /**
@@ -104,22 +107,25 @@ export async function responderDuvida(conversa: FalaDoChat[]): Promise<string> {
     return 'Pode mandar a sua dúvida sobre o app que eu tento ajudar.';
   }
 
-  const resposta = await obterCliente().messages.create({
+  const resposta = await obterCliente().models.generateContent({
     model: MODELO,
-    max_tokens: MAX_TOKENS,
-    system: INSTRUCOES,
-    messages: falas.map((fala) => ({
-      role: fala.autor === 'pessoa' ? ('user' as const) : ('assistant' as const),
-      content: fala.texto,
+    // O Gemini chama de "model" o papel que o resto do código chama de assistente.
+    contents: falas.map((fala) => ({
+      role: fala.autor === 'pessoa' ? 'user' : 'model',
+      parts: [{ text: fala.texto }],
     })),
+    config: {
+      systemInstruction: INSTRUCOES,
+      maxOutputTokens: MAX_TOKENS,
+      // O 2.5 Flash "pensa" antes de responder por padrão, e esse raciocínio consome o
+      // mesmo orçamento de `maxOutputTokens`. Com um teto baixo como o nosso, ele gasta
+      // tudo pensando e devolve texto VAZIO com finishReason MAX_TOKENS — falha silenciosa
+      // e difícil de diagnosticar. Uma dúvida de FAQ não precisa de raciocínio: desligado.
+      thinkingConfig: { thinkingBudget: 0 },
+    },
   });
 
-  // A resposta vem em blocos; só os de texto interessam (não usamos ferramentas aqui).
-  const texto = resposta.content
-    .filter((bloco): bloco is Anthropic.TextBlock => bloco.type === 'text')
-    .map((bloco) => bloco.text)
-    .join('')
-    .trim();
+  const texto = resposta.text?.trim();
 
   return texto || 'Não consegui formular uma resposta. Pode perguntar de outro jeito?';
 }

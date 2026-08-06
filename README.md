@@ -43,7 +43,7 @@ grupo e registra o match assim que todos os membros curtiram o mesmo título.
 - Match automático no momento do scroll, com aviso na tela
 - Menu do usuário com contadores e a lista de filmes curtidos (carregada de 20 em 20)
 - Chat de dúvidas sobre o app, no canto inferior esquerdo, respondido por um assistente
-  (Claude Haiku). Opcional: sem `ANTHROPIC_API_KEY` o resto do app funciona igual
+  (Gemini 2.5 Flash). Opcional: sem `GEMINI_API_KEY` o resto do app funciona igual
 
 ## Como funciona
 
@@ -110,7 +110,7 @@ O frontend passa a responder em http://localhost:5173. É um arquivo completo, n
 override: rode **um ou outro**, nunca os dois juntos (disputam nomes de container e
 portas). Se mexer em algum `package.json`, recrie os volumes anônimos com `-V`.
 
-Comandos úteis:
+/u/btwComandos úteis:
 
 ```bash
 docker compose logs -f backend                   # acompanhar logs
@@ -207,7 +207,7 @@ DATABASE_URL="<pooled>" DIRECT_URL="<direta>" npx prisma migrate deploy
 
 - **Root Directory**: `backend`
 - **Variáveis**: `DATABASE_URL`, `DIRECT_URL`, `TMDB_API_KEY`, `AUTH_SECRET` e,
-  se quiser o chat de dúvidas, `ANTHROPIC_API_KEY`
+  se quiser o chat de dúvidas, `GEMINI_API_KEY`
 - Anote a URL gerada (algo como `https://moviematch-api.vercel.app`)
 
 Não mexa em Build Command nem Output Directory no painel: o `backend/vercel.json` já
@@ -306,10 +306,11 @@ existem em produção; para criá-las, rode `npm run seed` apontando para o banc
 ## Chat de dúvidas
 
 O botão redondo no canto inferior esquerdo abre um chat que responde perguntas sobre o
-próprio app, usando o modelo **Claude Haiku 4.5**.
+próprio app, usando o **Gemini 2.5 Flash** — que é o modelo coberto pelo nível gratuito
+do Google AI Studio. Pegue a chave em https://aistudio.google.com/apikey.
 
 - **A chave vive só no backend.** O navegador chama `POST /chat` (rota protegida por
-  login) e é o servidor que fala com a Anthropic. Chave de API em variável `VITE_` seria
+  login) e é o servidor que fala com o Gemini. Chave de API em variável `VITE_` seria
   chave publicada — todo `VITE_` acaba dentro do JavaScript que qualquer um baixa.
 - **Nada é guardado.** A conversa vive na tela e some ao recarregar; o histórico inteiro
   sobe a cada pergunta para o assistente ter contexto. Sem tabela, sem migration.
@@ -317,16 +318,20 @@ próprio app, usando o modelo **Claude Haiku 4.5**.
   não existe (sair de grupo, desfazer like, recuperar senha, buscar filme). Sem essa
   lista o modelo preenche a lacuna com o que seria razoável existir e manda a pessoa
   procurar um botão inexistente — o erro mais caro aqui, porque soa plausível.
-- **Travas de custo**: pergunta de até 1000 caracteres, 20 falas de contexto,
-  `max_tokens` de 400 e 20 perguntas por hora por pessoa. O contador de perguntas fica na
-  memória do processo, então na Vercel, com várias instâncias, o teto real é maior — ele
-  segura engano e script bobo, não um ataque. Para valer de verdade, precisa virar tabela
-  no Postgres.
+- **O "pensamento" do modelo fica desligado** (`thinkingBudget: 0`). O 2.5 Flash raciocina
+  antes de responder por padrão, e esse raciocínio gasta o mesmo orçamento de
+  `maxOutputTokens`. Com o teto baixo daqui, ele consome tudo pensando e devolve texto
+  **vazio** — falha silenciosa e difícil de achar. Uma dúvida de FAQ não precisa disso.
+- **Travas de cota**: pergunta de até 1000 caracteres, 20 falas de contexto,
+  `maxOutputTokens` de 400 e 20 perguntas por hora por pessoa. O contador de perguntas
+  fica na memória do processo, então na Vercel, com várias instâncias, o teto real é
+  maior — ele segura engano e script bobo, não um ataque. Para valer de verdade, precisa
+  virar tabela no Postgres.
 - **Sem a chave, o app inteiro continua funcionando**: só o chat responde 503 e mostra o
   aviso na conversa.
 
-Para testar sem gastar crédito, o SDK aceita `ANTHROPIC_BASE_URL` — aponte para um
-servidor local que devolva uma resposta no formato da API e a rota funciona ponta a ponta.
+Para testar sem chave e sem consumir cota, defina `GEMINI_BASE_URL` apontando para um
+servidor local que devolva uma resposta no formato da API — a rota funciona ponta a ponta.
 
 ## Decisões de arquitetura
 

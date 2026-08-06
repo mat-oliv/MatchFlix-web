@@ -50,8 +50,9 @@ export async function chatRoutes(app: FastifyInstance) {
       .max(MAX_FALAS),
   });
 
-  // Protegida de propósito: a chave da Anthropic é paga, e conversa aberta na internet
-  // vira conta alta. O userId sai do token, nunca do corpo.
+  // Protegida de propósito: a cota do Gemini é finita (e vira cobrança depois do nível
+  // gratuito), e conversa aberta na internet esgota isso rápido. O userId sai do token,
+  // nunca do corpo.
   app.post('/chat', { preHandler: exigirAutenticacao }, async (request, reply) => {
     const parsed = bodySchema.safeParse(request.body);
     if (!parsed.success) {
@@ -76,7 +77,7 @@ export async function chatRoutes(app: FastifyInstance) {
       return reply.send({ resposta });
     } catch (erro) {
       if (erro instanceof AssistenteIndisponivel) {
-        request.log.error({ erro }, 'chat sem ANTHROPIC_API_KEY configurada');
+        request.log.error({ erro }, 'chat sem GEMINI_API_KEY configurada');
         return reply
           .status(503)
           .send({ error: 'O assistente ainda não está configurado neste servidor.' });
