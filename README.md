@@ -198,6 +198,10 @@ define os dois e manda todas as rotas para a função. O `outputDirectory` apont
 essa pasta. E nada de comentários no `vercel.json`: o schema da Vercel rejeita qualquer
 chave que ele não conheça, inclusive `"//"`.
 
+> O Build Command chama `npm run prisma:generate`, não `prisma generate` direto: ele
+> roda num shell sem o `node_modules/.bin` no PATH, e o binário não seria encontrado
+> (`exited with 127`). Vale para qualquer comando de CLI local que entre ali.
+
 ### 3. Projeto do site
 
 - **Root Directory**: `frontend`
