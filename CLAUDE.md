@@ -1,7 +1,8 @@
 # MovieMatch
 
 "Tinder para filmes em grupo". Backend Fastify + Prisma + Postgres, frontend React + Vite + Tailwind.
-Código e comentários em **português**.
+Código, comentários e documentação em **português** — só as mensagens de commit são em
+**inglês** (ver [Git](#git)).
 
 ## Como rodar — são DOIS servidores
 
@@ -92,3 +93,15 @@ Alternativa em container: `docker compose up` (site em :8080, prod) ou
 - **Match é registro histórico e fica congelado** — uma vez criado nunca é revogado.
   Entrar num grupo não invalida matches anteriores, e sair também não. Não implemente
   revalidação de matches quando a composição do grupo muda; é intencional.
+
+## Git
+
+- **Mensagem de commit em inglês**, sempre — título e corpo. É a única parte do projeto
+  que não é em português. Padrão conventional: `feat:`, `fix:`, `docs:`, `chore:`,
+  `refactor:`.
+- **Uma branch por mudança**, criada a partir do `master` atualizado (`origin/master`),
+  com o mesmo prefixo do commit: `feat/`, `fix/`, `docs/`, `chore/`. Nada direto no
+  `master`.
+- Trocar de branch troca o código no disco e o app em execução passa a ser outro. Se o
+  usuário estiver testando algo, volte pra branch dele ao terminar — ou use
+  `git worktree` pra mexer noutra branch sem mover a cópia de trabalho.
