@@ -193,7 +193,10 @@ DATABASE_URL="<pooled>" DIRECT_URL="<direta>" npx prisma migrate deploy
 - Anote a URL gerada (algo como `https://moviematch-api.vercel.app`)
 
 Não mexa em Build Command nem Output Directory no painel: o `backend/vercel.json` já
-define os dois e manda todas as rotas para a função.
+define os dois e manda todas as rotas para a função. O `outputDirectory` aponta para
+`backend/public/`, que existe só porque a Vercel exige uma saída estática — não apague
+essa pasta. E nada de comentários no `vercel.json`: o schema da Vercel rejeita qualquer
+chave que ele não conheça, inclusive `"//"`.
 
 ### 3. Projeto do site
 
