@@ -1,0 +1,10 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+
+  "//": "Projeto só de API. Sem isto a Vercel infere o build a partir do script `build` (tsc) e depois falha procurando um diretório de saída estático.",
+  "buildCommand": "prisma generate",
+  "outputDirectory": "public",
+
+  "//rewrites": "Todo caminho vai para a função de api/index.ts, que repassa ao Fastify. O caminho original é preservado, então /auth/login chega como /auth/login.",
+  "rewrites": [{ "source": "/(.*)", "destination": "/api" }]
+}

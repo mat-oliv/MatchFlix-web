@@ -28,8 +28,12 @@ services:
     restart: unless-stopped
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-moviematch}:${POSTGRES_PASSWORD:-moviematch}@db:5432/${POSTGRES_DB:-moviematch}?schema=public
+      # O Postgres do compose não tem pgbouncer: migrations e aplicação usam a mesma
+      # conexão. O schema exige DIRECT_URL de qualquer forma (ver prisma/schema.prisma).
+      DIRECT_URL: postgresql://${POSTGRES_USER:-moviematch}:${POSTGRES_PASSWORD:-moviematch}@db:5432/${POSTGRES_DB:-moviematch}?schema=public
       TMDB_API_KEY: ${TMDB_API_KEY:?defina TMDB_API_KEY no arquivo .env da raiz}
       AUTH_SECRET: ${AUTH_SECRET:?defina AUTH_SECRET no arquivo .env da raiz}
+      CORS_ORIGIN: ${CORS_ORIGIN:-}
       PORT: "3333"
     ports:
       - "${BACKEND_PORT:-3333}:3333"
