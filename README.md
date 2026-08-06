@@ -150,7 +150,7 @@ npm run dev              # http://localhost:5173
 | ------------------------ | -------------------------------------------------- |
 | `npm run dev`            | API com recarga automática (`tsx watch`)           |
 | `npm run build`          | Compila TypeScript para `dist/`                    |
-| `npm run typecheck`      | Checa tipos de `src/` **e** da função serverless   |
+| `npm run typecheck`      | Checa tipos sem gerar arquivos                     |
 | `npm run migrate:deploy` | Aplica as migrations pendentes no banco            |
 
 **frontend**
@@ -166,10 +166,19 @@ npm run dev              # http://localhost:5173
 São **dois projetos na Vercel, a partir deste mesmo repositório** — um serve o site
 estático, o outro roda a API — mais um Postgres gerenciado na Neon.
 
-A API sobe na Vercel pelo preset **Node.js**: ela executa o `dist/index.js` compilado,
-que é exatamente o mesmo servidor Fastify de desenvolvimento e do Docker, e encaminha as
-requisições para a porta que ele abre (`PORT` vem do ambiente). Não há adaptador nem
-código específico de plataforma.
+Na Vercel a API **não é um processo escutando porta** — não existe servidor de longa
+duração lá. Ela empacota o entrypoint do diretório de saída como função e chama, a cada
+requisição, o `export default` do `dist/index.js`. Esse handler entrega o par `req, res`
+ao mesmo Fastify de sempre, montado por `construirApp()`; o `PORT` não tem efeito
+nenhum.
+
+Daí os três arquivos de entrada, cada um com um trabalho só:
+
+| Arquivo              | Compila para            | Quem usa                       |
+| -------------------- | ----------------------- | ------------------------------ |
+| `src/lib/app.ts`     | `dist/lib/app.js`       | monta a app, não escuta porta  |
+| `src/index.ts`       | `dist/index.js`         | a Vercel (handler da função)   |
+| `src/bin/servidor.ts`| `dist/bin/servidor.js`  | `npm run dev`, `npm start`, Docker |
 
 ### 1. Banco na Neon
 
@@ -197,9 +206,9 @@ DATABASE_URL="<pooled>" DIRECT_URL="<direta>" npx prisma migrate deploy
 
 Não mexa em Build Command nem Output Directory no painel: o `backend/vercel.json` já
 define os dois — gera o Prisma Client, compila para `dist/` e aponta a saída para lá,
-onde a Vercel encontra o `index.js` que sobe o servidor.
+onde a Vercel encontra o `index.js` que responde às requisições.
 
-Três detalhes que custaram deploys quebrados:
+Quatro detalhes que custaram deploys quebrados:
 
 - **Nada de comentários no `vercel.json`.** O schema da Vercel rejeita qualquer chave
   desconhecida, inclusive `"//"` (`should NOT have additional property`).
@@ -209,6 +218,13 @@ Três detalhes que custaram deploys quebrados:
 - **O diretório de saída precisa conter o entrypoint** (`app.js`, `index.js` ou
   `server.js`, na raiz ou em `src/`). Apontar para uma pasta sem nenhum deles dá
   `No entrypoint found in output directory`.
+- **E esse entrypoint precisa ter `export default` de função ou servidor.** A Vercel
+  escolhe o primeiro desses nomes que encontrar e valida o export; se ele não servir, o
+  deploy passa mas a URL morre com `Invalid export found in module` +
+  `The default export must be a function or server`. Foi o que acontecia quando o
+  factory compilava para `dist/app.js`: ele era escolhido na frente do `index.js` e só
+  exporta `construirApp`, que é nomeado. Por isso o factory mora em `src/lib/` — e
+  nenhum arquivo novo deve compilar para a raiz do `dist` com esses três nomes.
 
 ### 3. Projeto do site
 
