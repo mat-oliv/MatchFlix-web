@@ -10,7 +10,9 @@ WORKDIR /app
 # ---------- dependências (todas, inclusive dev) ----------
 FROM base AS deps
 COPY package.json package-lock.json ./
-RUN npm ci
+# --ignore-scripts porque o postinstall (`prisma generate`, que a Vercel precisa) roda
+# antes de `prisma/` ser copiado e falharia aqui. Os estágios abaixo geram o client.
+RUN npm ci --ignore-scripts
 
 # ---------- dev: tsx watch, código vem por bind mount ----------
 FROM deps AS dev

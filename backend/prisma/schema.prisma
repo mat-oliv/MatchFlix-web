@@ -5,6 +5,10 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  // Conexão sem pool, usada só pelas migrations. Em produção a DATABASE_URL passa pelo
+  // pgbouncer da Neon, e migration por pgbouncer falha. Em desenvolvimento as duas
+  // apontam para o mesmo banco.
+  directUrl = env("DIRECT_URL")
 }
 
 model User {

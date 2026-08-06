@@ -22,6 +22,7 @@
 - [Com Docker (recomendado)](#com-docker-recomendado)
 - [Sem Docker](#sem-docker)
 - [Scripts](#scripts)
+- [Deploy na Vercel](#deploy-na-vercel)
 - [Decisões de arquitetura](#decisões-de-arquitetura)
 
 ---
@@ -126,8 +127,8 @@ navegador; `:3333` responde só JSON.
 ```bash
 cd backend
 npm install
-cp .env.example .env     # preencha DATABASE_URL, TMDB_API_KEY e AUTH_SECRET
-npx prisma db push       # aplica o schema (o projeto ainda não versiona migrations)
+cp .env.example .env     # DATABASE_URL, DIRECT_URL, TMDB_API_KEY e AUTH_SECRET
+npx prisma migrate deploy  # aplica as migrations em prisma/migrations
 npm run seed             # cria as contas de demonstração
 npm run dev              # http://localhost:3333
 ```
@@ -149,6 +150,8 @@ npm run dev              # http://localhost:5173
 | ------------------------ | -------------------------------------------------- |
 | `npm run dev`            | API com recarga automática (`tsx watch`)           |
 | `npm run build`          | Compila TypeScript para `dist/`                    |
+| `npm run typecheck`      | Checa tipos de `src/` **e** da função serverless   |
+| `npm run migrate:deploy` | Aplica as migrations pendentes no banco            |
 
 **frontend**
 
@@ -157,6 +160,68 @@ npm run dev              # http://localhost:5173
 | `npm run dev`     | Vite dev server em `:5173`                 |
 | `npm run build`   | Checagem de tipos + build de produção      |
 
+
+## Deploy na Vercel
+
+São **dois projetos na Vercel, a partir deste mesmo repositório** — um serve o site
+estático, o outro roda a API — mais um Postgres gerenciado na Neon. A Vercel não mantém
+processo escutando porta: `backend/api/index.ts` recebe cada requisição e a entrega ao
+mesmo Fastify de sempre, montado uma vez por instância.
+
+### 1. Banco na Neon
+
+Crie um projeto em [neon.tech](https://neon.tech) e guarde as **duas** strings de conexão:
+
+| Variável       | Qual string usar                                                    |
+| -------------- | ------------------------------------------------------------------- |
+| `DATABASE_URL` | a **com pool**, que tem `-pooler` no host — é a que a aplicação usa  |
+| `DIRECT_URL`   | a **direta**, sem `-pooler` — só as migrations passam por ela        |
+
+Migration através do pgbouncer falha; é por isso que são duas.
+
+Aplique o schema uma vez, do seu computador:
+
+```bash
+cd backend
+DATABASE_URL="<pooled>" DIRECT_URL="<direta>" npx prisma migrate deploy
+```
+
+### 2. Projeto da API
+
+- **Root Directory**: `backend`
+- **Variáveis**: `DATABASE_URL`, `DIRECT_URL`, `TMDB_API_KEY`, `AUTH_SECRET`
+- Anote a URL gerada (algo como `https://moviematch-api.vercel.app`)
+
+Não mexa em Build Command nem Output Directory no painel: o `backend/vercel.json` já
+define os dois e manda todas as rotas para a função.
+
+### 3. Projeto do site
+
+- **Root Directory**: `frontend`
+- **Variável**: `VITE_API_URL` = a URL da API do passo 2, **sem barra no fim**
+  (`https://moviematch-api.vercel.app`, não `.../`)
+
+`VITE_API_URL` entra no bundle em **build time**. Se mudar a URL da API depois, é
+preciso um Redeploy do site — editar a variável sozinha não muda nada.
+
+### 4. Fechar o CORS
+
+Com a URL do site em mãos, volte no projeto da API, adicione
+`CORS_ORIGIN=https://seu-site.vercel.app` e faça Redeploy. Sem essa variável a API
+responde a qualquer origem.
+
+### Conferir
+
+```bash
+curl https://sua-api.vercel.app/health     # {"status":"ok"}
+```
+
+Depois abra o site, crie uma conta e curta um filme. As contas de demonstração **não**
+existem em produção; para criá-las, rode `npm run seed` apontando para o banco da Neon.
+
+> No plano Hobby a função tem limite de 10s por requisição. A rota do feed pode buscar
+> várias páginas na TMDB em sequência — se ela chegar perto do limite, reduza
+> `MAX_PAGINAS_POR_REQUISICAO` em `backend/src/routes/movies.ts`.
 
 ## Decisões de arquitetura
 

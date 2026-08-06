@@ -1,0 +1,5 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "//": "O app não tem router: qualquer caminho serve o index.html. Arquivos existentes em dist/ têm precedência sobre este rewrite, então os assets continuam sendo servidos normalmente.",
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+}
