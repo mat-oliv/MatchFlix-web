@@ -1,10 +1,10 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
-import { authRoutes } from './routes/auth.js';
-import { groupRoutes } from './routes/groups.js';
-import { movieRoutes } from './routes/movies.js';
-import { profileRoutes } from './routes/profile.js';
-import { swipeRoutes } from './routes/swipes.js';
+import { authRoutes } from '../routes/auth.js';
+import { groupRoutes } from '../routes/groups.js';
+import { movieRoutes } from '../routes/movies.js';
+import { profileRoutes } from '../routes/profile.js';
+import { swipeRoutes } from '../routes/swipes.js';
 
 /**
  * Origens liberadas no CORS, separadas por vírgula em `CORS_ORIGIN`.
@@ -21,9 +21,14 @@ function origensPermitidas(): string[] | true {
 }
 
 /**
- * Monta a aplicação sem escutar porta — quem sobe o servidor é `src/index.ts`.
- * A separação existe para que a montagem possa ser reaproveitada (teste, script,
- * outro adaptador) sem que ninguém precise abrir uma porta para isso.
+ * Monta a aplicação sem escutar porta. Quem abre porta é `src/bin/servidor.ts`
+ * (desenvolvimento e Docker); na Vercel quem responde é o handler de `src/index.ts`.
+ * A separação existe justamente para que os dois reaproveitem a mesma montagem.
+ *
+ * O arquivo mora em `lib/` de propósito: a Vercel varre a raiz do `dist` procurando o
+ * entrypoint da função e escolhe o primeiro `index.js`/`app.js`/`server.js` que achar.
+ * Um `dist/app.js` no topo era capturado no lugar do `index.js` e derrubava o deploy
+ * com "Invalid export found in module".
  */
 export async function construirApp() {
   if (!process.env.AUTH_SECRET) {

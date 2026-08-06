@@ -47,4 +47,4 @@ RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 USER node
 EXPOSE 3333
 ENTRYPOINT ["docker-entrypoint.sh"]
-CMD ["node", "dist/index.js"]
+CMD ["node", "dist/bin/servidor.js"]
