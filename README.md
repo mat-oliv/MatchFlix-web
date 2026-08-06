@@ -164,9 +164,12 @@ npm run dev              # http://localhost:5173
 ## Deploy na Vercel
 
 São **dois projetos na Vercel, a partir deste mesmo repositório** — um serve o site
-estático, o outro roda a API — mais um Postgres gerenciado na Neon. A Vercel não mantém
-processo escutando porta: `backend/api/index.ts` recebe cada requisição e a entrega ao
-mesmo Fastify de sempre, montado uma vez por instância.
+estático, o outro roda a API — mais um Postgres gerenciado na Neon.
+
+A API sobe na Vercel pelo preset **Node.js**: ela executa o `dist/index.js` compilado,
+que é exatamente o mesmo servidor Fastify de desenvolvimento e do Docker, e encaminha as
+requisições para a porta que ele abre (`PORT` vem do ambiente). Não há adaptador nem
+código específico de plataforma.
 
 ### 1. Banco na Neon
 
@@ -193,14 +196,19 @@ DATABASE_URL="<pooled>" DIRECT_URL="<direta>" npx prisma migrate deploy
 - Anote a URL gerada (algo como `https://moviematch-api.vercel.app`)
 
 Não mexa em Build Command nem Output Directory no painel: o `backend/vercel.json` já
-define os dois e manda todas as rotas para a função. O `outputDirectory` aponta para
-`backend/public/`, que existe só porque a Vercel exige uma saída estática — não apague
-essa pasta. E nada de comentários no `vercel.json`: o schema da Vercel rejeita qualquer
-chave que ele não conheça, inclusive `"//"`.
+define os dois — gera o Prisma Client, compila para `dist/` e aponta a saída para lá,
+onde a Vercel encontra o `index.js` que sobe o servidor.
 
-> O Build Command chama `npm run prisma:generate`, não `prisma generate` direto: ele
-> roda num shell sem o `node_modules/.bin` no PATH, e o binário não seria encontrado
-> (`exited with 127`). Vale para qualquer comando de CLI local que entre ali.
+Três detalhes que custaram deploys quebrados:
+
+- **Nada de comentários no `vercel.json`.** O schema da Vercel rejeita qualquer chave
+  desconhecida, inclusive `"//"` (`should NOT have additional property`).
+- **CLI local no Build Command vai por `npm run`.** O comando roda num shell sem o
+  `node_modules/.bin` no PATH, então `prisma generate` direto falha com
+  `command not found` / `exited with 127`.
+- **O diretório de saída precisa conter o entrypoint** (`app.js`, `index.js` ou
+  `server.js`, na raiz ou em `src/`). Apontar para uma pasta sem nenhum deles dá
+  `No entrypoint found in output directory`.
 
 ### 3. Projeto do site
 
