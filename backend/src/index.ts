@@ -1,18 +1,71 @@
 import 'dotenv/config';
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import type { FastifyInstance } from 'fastify';
-import { construirApp } from './lib/app.js';
+import Fastify from 'fastify';
+import cors from '@fastify/cors';
+import { authRoutes } from './routes/auth.js';
+import { groupRoutes } from './routes/groups.js';
+import { movieRoutes } from './routes/movies.js';
+import { profileRoutes } from './routes/profile.js';
+import { swipeRoutes } from './routes/swipes.js';
 
-// Entrada da Vercel — e só dela. Lá a API não é um processo escutando porta: o runtime
-// Node carrega este arquivo, exige um `export default` que seja função ou servidor, e
-// chama esse handler a cada requisição. Quem sobe servidor de verdade é
+// Entrada da Vercel. Lá a API não é um processo escutando porta: o runtime carrega este
+// arquivo e chama o `export default` a cada requisição. Quem sobe servidor de verdade é
 // `src/bin/servidor.ts`, usado no desenvolvimento local e no container.
 //
-// Este é o único arquivo na raiz do `dist` compilado, porque é lá que a Vercel procura o
-// entrypoint. Nada mais deve ser compilado para o topo do `dist` com nome `index`,
-// `app` ou `server`, sob risco de ser escolhido no lugar deste.
+// Duas exigências da Vercel moldam este arquivo, e as duas já quebraram deploy:
+//
+// 1. Ela varre a RAIZ do `dist` atrás de `index.js`/`app.js`/`server.js` e exige do
+//    escolhido um `export default` que seja função ou servidor. Nada mais pode compilar
+//    para a raiz do `dist` com esses nomes, sob risco de ser escolhido no lugar deste.
+// 2. Ela só aceita como entrypoint o arquivo que importa `fastify` DIRETAMENTE. Delegar
+//    a montagem para outro módulo e só reexportar aqui falha o build com
+//    "No entrypoint found which imports fastify". É por isso que `construirApp` mora
+//    neste arquivo, e não num módulo separado em `lib/`.
 
-let montagem: Promise<FastifyInstance> | undefined;
+/**
+ * Origens liberadas no CORS, separadas por vírgula em `CORS_ORIGIN`.
+ * Em produção o site e a API ficam em domínios diferentes (dois projetos na Vercel),
+ * então a origem do site precisa estar listada. Sem a variável, reflete qualquer
+ * origem — que é o que o desenvolvimento local precisa.
+ */
+function origensPermitidas(): string[] | true {
+  const lista = process.env.CORS_ORIGIN?.split(',')
+    .map((origem) => origem.trim())
+    .filter(Boolean);
+
+  return lista && lista.length > 0 ? lista : true;
+}
+
+/**
+ * Monta a aplicação sem escutar porta. Rota nova entra aqui, nunca direto no handler
+ * nem no `bin/servidor.ts` — os dois reaproveitam esta mesma montagem.
+ */
+export async function construirApp() {
+  if (!process.env.AUTH_SECRET) {
+    throw new Error('AUTH_SECRET não configurada — necessária para assinar os tokens.');
+  }
+
+  // `LOG_LEVEL=silent` é usado pela verificação local (`npm run verify:vercel`), para a
+  // saída dela não sumir no meio do log de requisição.
+  const app = Fastify({ logger: { level: process.env.LOG_LEVEL || 'info' } });
+
+  // Preenchido pelo preHandler exigirAutenticacao nas rotas protegidas.
+  app.decorateRequest('userId', '');
+
+  await app.register(cors, { origin: origensPermitidas() });
+
+  await app.register(authRoutes);
+  await app.register(groupRoutes);
+  await app.register(profileRoutes);
+  await app.register(movieRoutes);
+  await app.register(swipeRoutes);
+
+  app.get('/health', async () => ({ status: 'ok' }));
+
+  return app;
+}
+
+let montagem: ReturnType<typeof construirApp> | undefined;
 
 /**
  * Monta a app uma vez por instância e reaproveita entre requisições — remontar a cada
@@ -24,7 +77,7 @@ let montagem: Promise<FastifyInstance> | undefined;
  * mataria o processo antes de qualquer requisição chegar, escondendo o motivo real.
  * Em caso de falha o cache é limpo, para que a requisição seguinte tente de novo.
  */
-function obterApp(): Promise<FastifyInstance> {
+function obterApp() {
   montagem ??= construirApp().then(async (app) => {
     // Sem `ready()` o Fastify ainda não registrou o listener de 'request' no servidor
     // HTTP interno, e o emit abaixo cairia no vazio.

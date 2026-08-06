@@ -6,3 +6,9 @@ dist/
 # Instruções e configuração locais do Claude Code — ficam na máquina, fora do repositório.
 CLAUDE.md
 .claude/
+# Estado local da CLI da Vercel (`vercel link`/`pull`/`build`) e as variáveis que ela
+# baixa do painel. Nada disso vai para o repositório. Repare que o `.env.example` fica
+# de fora do ignore de propósito — ele é a documentação das variáveis.
+.vercel/
+.env.local
+.env.*.local
