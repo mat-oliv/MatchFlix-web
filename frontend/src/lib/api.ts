@@ -144,3 +144,15 @@ export function createGroup(name: string): Promise<Group> {
 export function joinGroup(inviteCode: string): Promise<Group> {
   return pedir('/groups/join', { method: 'POST', body: JSON.stringify({ inviteCode }) });
 }
+
+// --- chat de dúvidas ---
+
+export type FalaDoChat = { autor: 'pessoa' | 'assistente'; texto: string };
+
+/**
+ * Manda a conversa inteira e recebe a próxima resposta. Nada fica guardado no servidor:
+ * o histórico vive no componente e volta a cada pergunta.
+ */
+export function perguntarAoAssistente(conversa: FalaDoChat[]): Promise<{ resposta: string }> {
+  return pedir('/chat', { method: 'POST', body: JSON.stringify({ conversa }) });
+}
