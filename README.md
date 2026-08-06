@@ -252,13 +252,25 @@ O que ele **não** cobre é o que só existe na infra dela: empacotamento dos en
 Prisma, variáveis do painel e o banco da Neon. Para isso, rode o build real:
 
 ```bash
-npx vercel login          # uma vez; o token expira de tempos em tempos
-npx vercel link           # associa a pasta backend/ ao projeto da API
-npx vercel build          # o build de verdade, na sua máquina
+# na RAIZ do repositório, não dentro de backend/
+npx vercel login                              # uma vez; o token expira
+npx vercel link --yes --project match-flix-web
+npx vercel pull --yes --environment preview
+npx vercel build                              # o build de verdade, na sua máquina
+npx vercel dev --listen 3995                  # roda o output pelo launcher da Vercel
 ```
 
-`vercel build` executa o mesmo pipeline do deploy e falha pelos mesmos motivos, sem
-publicar nada — é a checagem mais fiel que existe fora da Vercel.
+**Rode da raiz do repositório.** O *Root Directory* do projeto já é `backend`; rodando
+de dentro de `backend/` a CLI concatena os dois e procura `backend/backend`, falhando
+com um confuso `spawn npm ENOENT`.
+
+`vercel build` executa o mesmo pipeline do deploy sem publicar nada, e `vercel dev` serve
+o resultado pelo mesmo launcher que roda em produção — é ele que emite o
+`Invalid export found in module`. Juntos, cobrem os dois erros que já quebraram deploy
+aqui.
+
+Confira em `.vercel/output/functions/index.func/.vc-config.json` qual entrypoint a Vercel
+escolheu: `"handler": "backend/dist/index.js"` é o esperado.
 
 ### 3. Projeto do site
 
