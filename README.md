@@ -22,10 +22,7 @@
 - [Com Docker (recomendado)](#com-docker-recomendado)
 - [Sem Docker](#sem-docker)
 - [Scripts](#scripts)
-- [API](#api)
-- [Modelo de dados](#modelo-de-dados)
 - [Decisões de arquitetura](#decisões-de-arquitetura)
-- [Solução de problemas](#solução-de-problemas)
 
 ---
 
