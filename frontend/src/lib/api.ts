@@ -108,7 +108,7 @@ export type UserGroup = Group & {
 // --- perfil ---
 
 export type Perfil = {
-  user: { id: string; username: string };
+  user: { id: string; username: string; avatarUrl: string | null };
   groupCount: number;
   likedCount: number;
 };
@@ -116,6 +116,11 @@ export type Perfil = {
 /** Só identificação e contadores — a lista de curtidos vem de `getFilmesCurtidos`. */
 export function getMeuPerfil(): Promise<Perfil> {
   return pedir('/me/profile');
+}
+
+/** `avatar` é uma data URL; quem reduz a imagem é o navegador, antes de chamar aqui. */
+export function salvarAvatar(avatar: string): Promise<{ avatarUrl: string }> {
+  return pedir('/me/avatar', { method: 'PUT', body: JSON.stringify({ avatar }) });
 }
 
 /**

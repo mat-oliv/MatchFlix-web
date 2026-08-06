@@ -13,6 +13,9 @@ model User {
   passwordHash String
   name         String
   email        String?  @unique
+  // Foto de perfil como data URL (o navegador já reduz antes de mandar). Fica no
+  // banco pra não precisar de storage de arquivos nem volume só pra isso.
+  avatarUrl    String?
   createdAt    DateTime @default(now())
 
   memberships GroupMember[]

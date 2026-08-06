@@ -8,6 +8,13 @@ import { exigirAutenticacao } from '../lib/auth.js';
 // 20 enche a grade do menu sem fazer ninguém esperar a lista inteira.
 const TAMANHO_PAGINA = 20;
 
+// A foto chega como data URL já reduzida pelo navegador (256px, JPEG) — algo em torno
+// de 30 KB. O teto aqui é folgado de propósito, só pra barrar quem mandar o arquivo
+// original de vários MB direto na API. O limite de corpo do Fastify (1 MB) é a trava
+// seguinte.
+const AVATAR_MAX_CARACTERES = 500_000;
+const AVATAR_FORMATO = /^data:image\/(png|jpe?g|webp);base64,[A-Za-z0-9+/]+={0,2}$/;
+
 export async function profileRoutes(app: FastifyInstance) {
   // Identificação e contadores do menu do usuário. Não devolve os filmes curtidos:
   // quem curtiu muito esperava todas as buscas na TMDB antes de ver o menu. A lista
@@ -18,7 +25,7 @@ export async function profileRoutes(app: FastifyInstance) {
     const [user, groupCount, likedCount] = await Promise.all([
       prisma.user.findUnique({
         where: { id: userId },
-        select: { id: true, username: true },
+        select: { id: true, username: true, avatarUrl: true },
       }),
       prisma.groupMember.count({ where: { userId } }),
       prisma.swipe.count({ where: { userId, liked: true } }),
@@ -27,6 +34,28 @@ export async function profileRoutes(app: FastifyInstance) {
     if (!user) return reply.status(401).send({ error: 'Usuário não encontrado.' });
 
     return reply.send({ user, groupCount, likedCount });
+  });
+
+  // Troca a foto de perfil. Sempre do próprio usuário: o id vem do token.
+  app.put('/me/avatar', { preHandler: exigirAutenticacao }, async (request, reply) => {
+    const bodySchema = z.object({
+      avatar: z.string().max(AVATAR_MAX_CARACTERES).regex(AVATAR_FORMATO),
+    });
+
+    const parsed = bodySchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply
+        .status(400)
+        .send({ error: 'Imagem inválida ou grande demais. Tente outra foto.' });
+    }
+
+    const user = await prisma.user.update({
+      where: { id: request.userId },
+      data: { avatarUrl: parsed.data.avatar },
+      select: { avatarUrl: true },
+    });
+
+    return reply.send(user);
   });
 
   // Uma página de filmes curtidos, do mais recente pro mais antigo.
