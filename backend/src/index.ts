@@ -45,7 +45,9 @@ export async function construirApp() {
     throw new Error('AUTH_SECRET não configurada — necessária para assinar os tokens.');
   }
 
-  const app = Fastify({ logger: true });
+  // `LOG_LEVEL=silent` é usado pela verificação local (`npm run verify:vercel`), para a
+  // saída dela não sumir no meio do log de requisição.
+  const app = Fastify({ logger: { level: process.env.LOG_LEVEL || 'info' } });
 
   // Preenchido pelo preHandler exigirAutenticacao nas rotas protegidas.
   app.decorateRequest('userId', '');

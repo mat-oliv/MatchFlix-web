@@ -151,6 +151,7 @@ npm run dev              # http://localhost:5173
 | `npm run dev`            | API com recarga automática (`tsx watch`)           |
 | `npm run build`          | Compila TypeScript para `dist/`                    |
 | `npm run typecheck`      | Checa tipos sem gerar arquivos                     |
+| `npm run verify:vercel`  | Roda os portões da Vercel localmente, sem deploy    |
 | `npm run migrate:deploy` | Aplica as migrations pendentes no banco            |
 
 **frontend**
@@ -231,6 +232,33 @@ Cinco detalhes que custaram deploys quebrados:
   módulo separado e deixar o `index.js` só delegando falha o build com
   `No entrypoint found which imports fastify` — a detecção olha os imports do próprio
   arquivo, não o que eles importam. É por isso que `construirApp` vive no `index.ts`.
+
+### Testar antes de fazer deploy
+
+Cada um dos erros acima só apareceu depois de um deploy. Não precisa ser assim — dá para
+rodar os portões da Vercel na sua máquina:
+
+```bash
+cd backend && npm run verify:vercel
+```
+
+O script compila, aplica **as mesmas regras de detecção de entrypoint da Vercel** (nomes
+aceitos, extensões e o regex do import de `fastify`, copiados de `@vercel/fastify`),
+confere o formato do `export default` e sobe o handler para responder requisições de
+verdade. Ele reprova, com a mensagem que a Vercel daria, os dois casos que já quebraram
+deploy aqui.
+
+O que ele **não** cobre é o que só existe na infra dela: empacotamento dos engines do
+Prisma, variáveis do painel e o banco da Neon. Para isso, rode o build real:
+
+```bash
+npx vercel login          # uma vez; o token expira de tempos em tempos
+npx vercel link           # associa a pasta backend/ ao projeto da API
+npx vercel build          # o build de verdade, na sua máquina
+```
+
+`vercel build` executa o mesmo pipeline do deploy e falha pelos mesmos motivos, sem
+publicar nada — é a checagem mais fiel que existe fora da Vercel.
 
 ### 3. Projeto do site
 

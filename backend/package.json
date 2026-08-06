@@ -8,6 +8,7 @@
     "build": "rm -rf dist && tsc",
     "start": "node dist/bin/servidor.js",
     "typecheck": "tsc --noEmit",
+    "verify:vercel": "node scripts/verificar-vercel.mjs",
     "postinstall": "prisma generate",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
