@@ -43,7 +43,7 @@ grupo e registra o match assim que todos os membros curtiram o mesmo título.
 - Match automático no momento do scroll, com aviso na tela
 - Menu do usuário com contadores e a lista de filmes curtidos (carregada de 20 em 20)
 - Chat de dúvidas sobre o app, no canto inferior esquerdo, respondido por um assistente
-  (Gemini 2.5 Flash). Opcional: sem `GEMINI_API_KEY` o resto do app funciona igual
+  (Gemini 3.5 Flash). Opcional: sem `GEMINI_API_KEY` o resto do app funciona igual
 
 ## Como funciona
 
@@ -306,8 +306,13 @@ existem em produção; para criá-las, rode `npm run seed` apontando para o banc
 ## Chat de dúvidas
 
 O botão redondo no canto inferior esquerdo abre um chat que responde perguntas sobre o
-próprio app, usando o **Gemini 2.5 Flash** — que é o modelo coberto pelo nível gratuito
-do Google AI Studio. Pegue a chave em https://aistudio.google.com/apikey.
+próprio app, usando o **Gemini 3.5 Flash** pelo nível gratuito do Google AI Studio.
+Pegue a chave em https://aistudio.google.com/apikey.
+
+> **Se o chat começar a falhar sempre, desconfie do modelo.** O Google aposenta modelo
+> para chaves novas sem tirá-lo da listagem: o `gemini-2.5-flash` continua aparecendo em
+> `models.list()` e mesmo assim o `generateContent` responde 404 "no longer available to
+> new users". Listar não prova que dá para usar — teste uma chamada de verdade.
 
 - **A chave vive só no backend.** O navegador chama `POST /chat` (rota protegida por
   login) e é o servidor que fala com o Gemini. Chave de API em variável `VITE_` seria
@@ -318,10 +323,16 @@ do Google AI Studio. Pegue a chave em https://aistudio.google.com/apikey.
   não existe (sair de grupo, desfazer like, recuperar senha, buscar filme). Sem essa
   lista o modelo preenche a lacuna com o que seria razoável existir e manda a pessoa
   procurar um botão inexistente — o erro mais caro aqui, porque soa plausível.
-- **O "pensamento" do modelo fica desligado** (`thinkingBudget: 0`). O 2.5 Flash raciocina
+- **O "pensamento" do modelo fica desligado** (`thinkingBudget: 0`). O Flash raciocina
   antes de responder por padrão, e esse raciocínio gasta o mesmo orçamento de
-  `maxOutputTokens`. Com o teto baixo daqui, ele consome tudo pensando e devolve texto
-  **vazio** — falha silenciosa e difícil de achar. Uma dúvida de FAQ não precisa disso.
+  `maxOutputTokens` — medido: 207 a 284 tokens pensando para responder 29. Com o teto de
+  400 daqui, uma pergunta mais difícil consome tudo no raciocínio e devolve texto
+  **vazio**, falha silenciosa e difícil de achar. Uma FAQ não precisa disso.
+  Atenção ao trocar de modelo: os mais novos (`3.6-flash`, `3.5-flash-lite`) **recusam**
+  esse campo com 400. Se for para um deles, tire a linha e suba o `maxOutputTokens`.
+- **O nível gratuito permite 5 requisições por minuto** por modelo. Duas ou três pessoas
+  perguntando ao mesmo tempo já esbarram nisso, então o 429 do Google vira um 429 nosso
+  com mensagem própria ("Muita gente perguntando agora"), em vez do erro genérico.
 - **Travas de cota**: pergunta de até 1000 caracteres, 20 falas de contexto,
   `maxOutputTokens` de 400 e 20 perguntas por hora por pessoa. O contador de perguntas
   fica na memória do processo, então na Vercel, com várias instâncias, o teto real é

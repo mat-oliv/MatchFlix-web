@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { exigirAutenticacao } from '../lib/auth.js';
-import { AssistenteIndisponivel, responderDuvida } from '../lib/chatbot.js';
+import { AssistenteIndisponivel, CotaEsgotada, responderDuvida } from '../lib/chatbot.js';
 
 /** Tamanho máximo de uma fala. Dúvida sobre o app não precisa de mais que isto. */
 const MAX_CARACTERES = 1000;
@@ -76,16 +76,30 @@ export async function chatRoutes(app: FastifyInstance) {
       const resposta = await responderDuvida(conversa);
       return reply.send({ resposta });
     } catch (erro) {
+      // O log usa a chave `err`, e não um nome qualquer: o pino só serializa Error com
+      // mensagem e stack sob essa chave. Sob `{ erro }` sairia `erro: {}` — as
+      // propriedades de Error não são enumeráveis — e o motivo real ficaria invisível
+      // justamente quando mais se precisa dele. Já custou uma sessão inteira de
+      // depuração às cegas.
       if (erro instanceof AssistenteIndisponivel) {
-        request.log.error({ erro }, 'chat sem GEMINI_API_KEY configurada');
+        request.log.error({ err: erro }, 'chat sem GEMINI_API_KEY configurada');
         return reply
           .status(503)
           .send({ error: 'O assistente ainda não está configurado neste servidor.' });
       }
 
-      // Falha da API externa (fora do ar, sem crédito, chave inválida). O motivo fica no
-      // log; para a pessoa vai uma mensagem que não expõe detalhe de infraestrutura.
-      request.log.error({ erro }, 'falha ao falar com a API do assistente');
+      // Cota do nível gratuito estourada (são 5 requisições por minuto). Não é defeito,
+      // e a pessoa resolve esperando — por isso mensagem própria, não a genérica.
+      if (erro instanceof CotaEsgotada) {
+        request.log.warn({ err: erro }, 'cota do Gemini esgotada');
+        return reply
+          .status(429)
+          .send({ error: 'Muita gente perguntando agora. Tente de novo em alguns segundos.' });
+      }
+
+      // Falha da API externa (fora do ar, chave inválida, modelo aposentado). O motivo
+      // fica no log; para a pessoa vai uma mensagem que não expõe detalhe de infra.
+      request.log.error({ err: erro }, 'falha ao falar com a API do assistente');
       return reply
         .status(502)
         .send({ error: 'O assistente não respondeu agora. Tente de novo em instantes.' });
