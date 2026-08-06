@@ -1,14 +1,32 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { SwipeScreen } from './pages/SwipeScreen';
 import { Groups } from './pages/Groups';
 import { Auth } from './pages/Auth';
 import { MenuUsuario } from './components/MenuUsuario';
+import { getMeuPerfil } from './lib/api';
 import { lerSessao, limparSessao, type Sessao } from './lib/session';
 
 export default function App() {
   const [sessao, setSessao] = useState<Sessao | null>(() => lerSessao());
   const [tab, setTab] = useState<'swipe' | 'groups'>('swipe');
   const [menuAberto, setMenuAberto] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+
+  // A miniatura do cabeçalho é a mesma foto do menu, mas o cabeçalho aparece antes de
+  // o menu ser aberto alguma vez — por isso o App busca o perfil por conta própria.
+  // Falhar aqui não interrompe nada: fica o círculo branco, como antes da foto existir.
+  useEffect(() => {
+    if (!sessao) return;
+
+    let cancelado = false;
+    getMeuPerfil()
+      .then((perfil) => !cancelado && setAvatarUrl(perfil.user.avatarUrl))
+      .catch(() => {});
+
+    return () => {
+      cancelado = true;
+    };
+  }, [sessao]);
 
   if (!sessao) return <Auth onEntrar={setSessao} />;
 
@@ -16,6 +34,8 @@ export default function App() {
     limparSessao();
     setSessao(null);
     setMenuAberto(false);
+    // Sem isso a foto de quem saiu apareceria pro próximo login, até o perfil carregar.
+    setAvatarUrl(null);
   }
 
   return (
@@ -49,7 +69,12 @@ export default function App() {
             className="flex items-center gap-2 pl-1 pr-3 py-1 rounded-full text-sm text-white/70 hover:text-white hover:bg-white/5 transition"
           >
             {/* Mesmo lugar da foto de perfil, em miniatura — ver MenuUsuario.tsx */}
-            <span className="w-6 h-6 rounded-full bg-white shrink-0" aria-hidden="true" />
+            <span
+              className="w-6 h-6 rounded-full bg-white shrink-0 overflow-hidden"
+              aria-hidden="true"
+            >
+              {avatarUrl && <img src={avatarUrl} alt="" className="w-full h-full object-cover" />}
+            </span>
             <span className="max-w-[8rem] truncate">{sessao.user.username}</span>
           </button>
         </nav>
@@ -60,7 +85,13 @@ export default function App() {
         {tab === 'swipe' ? <SwipeScreen /> : <Groups />}
       </main>
 
-      {menuAberto && <MenuUsuario onFechar={() => setMenuAberto(false)} onSair={sair} />}
+      {menuAberto && (
+        <MenuUsuario
+          onFechar={() => setMenuAberto(false)}
+          onSair={sair}
+          onFotoAtualizada={setAvatarUrl}
+        />
+      )}
     </div>
   );
 }

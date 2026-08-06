@@ -11,6 +11,8 @@ import {
 type Props = {
   onFechar: () => void;
   onSair: () => void;
+  /** Mantém a miniatura do cabeçalho igual à foto daqui, sem esperar um recarregamento. */
+  onFotoAtualizada: (url: string | null) => void;
 };
 
 const TAMANHO_AVATAR = 256;
@@ -62,7 +64,7 @@ async function prepararFoto(arquivo: File): Promise<string> {
 }
 
 /** Menu do usuário — sobrepõe a tela atual, não substitui. */
-export function MenuUsuario({ onFechar, onSair }: Props) {
+export function MenuUsuario({ onFechar, onSair, onFotoAtualizada }: Props) {
   const [perfil, setPerfil] = useState<Perfil | null>(null);
   const [curtidos, setCurtidos] = useState<FilmeResumo[]>([]);
   const [temMais, setTemMais] = useState(true);
@@ -107,11 +109,16 @@ export function MenuUsuario({ onFechar, onSair }: Props) {
 
   useEffect(() => {
     getMeuPerfil()
-      .then(setPerfil)
+      .then((dados) => {
+        setPerfil(dados);
+        // Ressincroniza o cabeçalho: se a busca dele no boot falhou, é aqui que a
+        // miniatura acerta.
+        onFotoAtualizada(dados.user.avatarUrl);
+      })
       .catch((err) => setErro(mensagemDoErro(err, 'Não foi possível carregar seu perfil.')));
 
     carregarMais();
-  }, [carregarMais]);
+  }, [carregarMais, onFotoAtualizada]);
 
   // O observer é recriado a cada página: se a sentinela seguir visível depois de
   // carregar, o callback dispara de novo sozinho e a próxima página vem em seguida.
@@ -154,6 +161,7 @@ export function MenuUsuario({ onFechar, onSair }: Props) {
     try {
       const { avatarUrl } = await salvarAvatar(await prepararFoto(arquivo));
       setPerfil((atual) => (atual ? { ...atual, user: { ...atual.user, avatarUrl } } : atual));
+      onFotoAtualizada(avatarUrl);
     } catch (err) {
       setErroFoto(mensagemDoErro(err, 'Não foi possível salvar a foto.'));
     } finally {
