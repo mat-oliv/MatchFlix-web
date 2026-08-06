@@ -1,0 +1,64 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  name         String
+  email        String?  @unique
+  createdAt    DateTime @default(now())
+
+  memberships GroupMember[]
+  swipes      Swipe[]
+}
+
+model Group {
+  id         String   @id @default(cuid())
+  name       String
+  inviteCode String   @unique
+  createdAt  DateTime @default(now())
+
+  members GroupMember[]
+  matches Match[]
+}
+
+model GroupMember {
+  groupId  String
+  userId   String
+  joinedAt DateTime @default(now())
+
+  group Group @relation(fields: [groupId], references: [id])
+  user  User  @relation(fields: [userId], references: [id])
+
+  @@id([groupId, userId])
+}
+
+model Swipe {
+  id        String   @id @default(cuid())
+  userId    String
+  movieId   Int
+  liked     Boolean
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, movieId])
+}
+
+model Match {
+  id        String   @id @default(cuid())
+  groupId   String
+  movieId   Int
+  createdAt DateTime @default(now())
+
+  group Group @relation(fields: [groupId], references: [id])
+
+  @@unique([groupId, movieId])
+}

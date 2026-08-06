@@ -1,0 +1,64 @@
+# Stack de produção: imagens buildadas, frontend estático servido por nginx.
+# Para desenvolvimento com hot reload use docker-compose.dev.yml.
+
+name: movie-match
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-moviematch}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-moviematch}
+      POSTGRES_DB: ${POSTGRES_DB:-moviematch}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-moviematch} -d ${POSTGRES_DB:-moviematch}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  backend:
+    build:
+      context: ./backend
+      target: runtime
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-moviematch}:${POSTGRES_PASSWORD:-moviematch}@db:5432/${POSTGRES_DB:-moviematch}?schema=public
+      TMDB_API_KEY: ${TMDB_API_KEY:?defina TMDB_API_KEY no arquivo .env da raiz}
+      AUTH_SECRET: ${AUTH_SECRET:?defina AUTH_SECRET no arquivo .env da raiz}
+      PORT: "3333"
+    ports:
+      - "${BACKEND_PORT:-3333}:3333"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3333/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  frontend:
+    build:
+      context: ./frontend
+      target: runtime
+      args:
+        # Precisa ser a URL que o NAVEGADOR enxerga, não o hostname interno da rede.
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:${BACKEND_PORT:-3333}}
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-8080}:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres-data:
