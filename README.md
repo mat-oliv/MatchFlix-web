@@ -172,13 +172,15 @@ requisição, o `export default` do `dist/index.js`. Esse handler entrega o par 
 ao mesmo Fastify de sempre, montado por `construirApp()`; o `PORT` não tem efeito
 nenhum.
 
-Daí os três arquivos de entrada, cada um com um trabalho só:
+Daí os dois arquivos de entrada:
 
-| Arquivo              | Compila para            | Quem usa                       |
-| -------------------- | ----------------------- | ------------------------------ |
-| `src/lib/app.ts`     | `dist/lib/app.js`       | monta a app, não escuta porta  |
-| `src/index.ts`       | `dist/index.js`         | a Vercel (handler da função)   |
-| `src/bin/servidor.ts`| `dist/bin/servidor.js`  | `npm run dev`, `npm start`, Docker |
+| Arquivo               | Compila para           | Quem usa                                        |
+| --------------------- | ---------------------- | ----------------------------------------------- |
+| `src/index.ts`        | `dist/index.js`        | a Vercel — monta a app (`construirApp`) e exporta o handler |
+| `src/bin/servidor.ts` | `dist/bin/servidor.js` | `npm run dev`, `npm start`, Docker — o `listen()` de verdade |
+
+A montagem mora no mesmo arquivo do handler porque a Vercel **exige** que o entrypoint
+importe `fastify` diretamente (veja abaixo). Rota nova entra no `construirApp`.
 
 ### 1. Banco na Neon
 
@@ -208,7 +210,7 @@ Não mexa em Build Command nem Output Directory no painel: o `backend/vercel.jso
 define os dois — gera o Prisma Client, compila para `dist/` e aponta a saída para lá,
 onde a Vercel encontra o `index.js` que responde às requisições.
 
-Quatro detalhes que custaram deploys quebrados:
+Cinco detalhes que custaram deploys quebrados:
 
 - **Nada de comentários no `vercel.json`.** O schema da Vercel rejeita qualquer chave
   desconhecida, inclusive `"//"` (`should NOT have additional property`).
@@ -223,8 +225,12 @@ Quatro detalhes que custaram deploys quebrados:
   deploy passa mas a URL morre com `Invalid export found in module` +
   `The default export must be a function or server`. Foi o que acontecia quando o
   factory compilava para `dist/app.js`: ele era escolhido na frente do `index.js` e só
-  exporta `construirApp`, que é nomeado. Por isso o factory mora em `src/lib/` — e
-  nenhum arquivo novo deve compilar para a raiz do `dist` com esses três nomes.
+  exporta `construirApp`, que é nomeado. Nenhum arquivo novo deve compilar para a raiz
+  do `dist` com esses três nomes.
+- **E esse entrypoint precisa importar `fastify` diretamente.** Mover o factory para um
+  módulo separado e deixar o `index.js` só delegando falha o build com
+  `No entrypoint found which imports fastify` — a detecção olha os imports do próprio
+  arquivo, não o que eles importam. É por isso que `construirApp` vive no `index.ts`.
 
 ### 3. Projeto do site
 
