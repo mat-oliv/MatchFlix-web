@@ -42,6 +42,9 @@ grupo e registra o match assim que todos os membros curtiram o mesmo título.
 - Grupos com código de convite para compartilhar
 - Match automático no momento do scroll, com aviso na tela
 - Menu do usuário com contadores e a lista de filmes curtidos (carregada de 20 em 20)
+- Chat de dúvidas sobre o app, no canto inferior esquerdo — **só a interface por
+  enquanto**: não há assistente ligado, e toda pergunta recebe uma resposta fixa
+  dizendo isso (ver `responder()` em `frontend/src/components/ChatDuvidas.tsx`)
 
 ## Como funciona
 

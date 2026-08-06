@@ -3,6 +3,7 @@ import { SwipeScreen } from './pages/SwipeScreen';
 import { Groups } from './pages/Groups';
 import { Auth } from './pages/Auth';
 import { MenuUsuario } from './components/MenuUsuario';
+import { ChatDuvidas } from './components/ChatDuvidas';
 import { getMeuPerfil } from './lib/api';
 import { lerSessao, limparSessao, type Sessao } from './lib/session';
 
@@ -10,6 +11,7 @@ export default function App() {
   const [sessao, setSessao] = useState<Sessao | null>(() => lerSessao());
   const [tab, setTab] = useState<'swipe' | 'groups'>('swipe');
   const [menuAberto, setMenuAberto] = useState(false);
+  const [chatAberto, setChatAberto] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   // A miniatura do cabeçalho é a mesma foto do menu, mas o cabeçalho aparece antes de
@@ -92,6 +94,34 @@ export default function App() {
           onFotoAtualizada={setAvatarUrl}
         />
       )}
+
+      {/* Some enquanto a conversa está aberta: o painel nasce por cima dele, e deixá-lo
+          embaixo da sobreposição só daria um botão visível que não responde ao clique. */}
+      {!chatAberto && (
+        <button
+          onClick={() => setChatAberto(true)}
+          aria-haspopup="dialog"
+          aria-label="Abrir dúvidas sobre o aplicativo"
+          title="Dúvidas sobre o app"
+          className="fixed bottom-6 left-6 z-40 w-14 h-14 rounded-full bg-accent2 text-ink grid place-items-center shadow-lg shadow-black/40 hover:brightness-110 active:scale-95 transition"
+        >
+          {/* Balão de conversa em traço: a versão preenchida vira um borrão nesse tamanho. */}
+          <svg
+            viewBox="0 0 24 24"
+            className="w-7 h-7"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M20.5 11.7c0 4.2-3.8 7.6-8.5 7.6-1.1 0-2.2-.2-3.2-.5L3.5 20.5l1.8-4.4c-1.1-1.2-1.8-2.7-1.8-4.4 0-4.2 3.8-7.6 8.5-7.6s8.5 3.4 8.5 7.6z" />
+          </svg>
+        </button>
+      )}
+
+      {chatAberto && <ChatDuvidas onFechar={() => setChatAberto(false)} />}
     </div>
   );
 }
