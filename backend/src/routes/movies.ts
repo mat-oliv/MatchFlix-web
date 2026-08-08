@@ -97,16 +97,19 @@ export async function movieRoutes(app: FastifyInstance) {
     // Sem page = começo de sessão: sorteia onde entrar no catálogo.
     let pagina = page ?? Math.floor(Math.random() * PAGINA_INICIAL_MAX) + 1;
 
-    const jaVotados = new Set(
+    // Só o que a pessoa CURTIU sai do feed em definitivo. Filme apenas passado volta a
+    // aparecer: passar é "hoje não", não "nunca mais", e sem isso o catálogo acaba
+    // rápido para quem usa bastante.
+    const jaCurtidos = new Set(
       (
         await prisma.swipe.findMany({
-          where: { userId: request.userId },
+          where: { userId: request.userId, liked: true },
           select: { movieId: true },
         })
       ).map((s) => s.movieId)
     );
 
-    // Uma página pode vir inteira de filmes já votados — busca as seguintes até
+    // Uma página pode vir inteira de filmes já curtidos — busca as seguintes até
     // juntar filmes novos o bastante ou estourar o limite de tentativas.
     const novos: TmdbMovie[] = [];
 
@@ -114,7 +117,7 @@ export async function movieRoutes(app: FastifyInstance) {
       const filmes = await fetchPopularMovies(idiomaDaRequisicao(request), pagina);
       if (filmes.length === 0) break;
 
-      novos.push(...filmes.filter((m) => !jaVotados.has(m.id)));
+      novos.push(...filmes.filter((m) => !jaCurtidos.has(m.id)));
       pagina++;
     }
 

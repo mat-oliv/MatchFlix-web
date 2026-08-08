@@ -37,8 +37,10 @@ COMO FUNCIONA
 - Entrar: cadastro e login com usuário e senha. A sessão dura 7 dias.
 - Aba "Filmes": o feed traz filmes populares da TMDB. Curtir ou descartar.
   Tocar no card abre a descrição completa, o ano e a nota.
-- Você vota em cada filme UMA vez só, e esse voto vale para todos os seus grupos ao mesmo
-  tempo. O voto não é por grupo. Filme já votado não volta a aparecer no feed.
+- Seu voto vale para todos os seus grupos ao mesmo tempo; não é por grupo.
+- Filme que você CURTIU não volta a aparecer no feed. Filme que você só passou PODE
+  voltar a aparecer outro dia — passar é "hoje não", não "nunca mais". Se ele voltar e
+  você curtir, aí sim ele sai do feed de vez.
 - Aba "Grupos": criar um grupo, que gera um código de convite para compartilhar, ou
   entrar num grupo existente digitando o código.
 - Match: acontece no momento em que alguém curte um filme, se TODOS os membros daquele
@@ -51,7 +53,8 @@ COMO FUNCIONA
 
 O QUE NÃO EXISTE (nunca diga que existe, nunca ensine a fazer)
 - Não há como sair de um grupo, nem remover alguém, nem apagar um grupo.
-- Não há como desfazer um like ou um dislike, nem rever filmes já votados.
+- Não há como desfazer um like: uma vez curtido, o filme não volta ao feed e não existe
+  botão para descurtir.
 - Não há recuperação de senha nem "esqueci minha senha". Não há e-mail nem confirmação.
 - Não há como apagar a conta, mudar a senha ou mudar o nome de usuário.
 - Não há chat entre as pessoas do grupo, nem notificação fora do app.

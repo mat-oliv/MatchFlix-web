@@ -13,9 +13,16 @@ export async function swipeRoutes(app: FastifyInstance) {
     const { movieId, liked } = bodySchema.parse(request.body);
     const userId = request.userId;
 
+    // `createdAt` é reposto a cada voto: aqui ele significa "quando o voto ATUAL foi
+    // registrado", não quando a linha nasceu. O nome é herança do `@default(now())`.
+    //
+    // É necessário porque filme apenas passado volta ao feed: quem passou em janeiro e
+    // curtiu em março tem a linha atualizada, não criada. Sem repor a data, esse like
+    // não entraria no ranking da semana e o filme apareceria no meio da lista de
+    // curtidos, com a data de janeiro, em vez de no topo.
     const swipe = await prisma.swipe.upsert({
       where: { userId_movieId: { userId, movieId } },
-      update: { liked },
+      update: { liked, createdAt: new Date() },
       create: { userId, movieId, liked },
     });
 
