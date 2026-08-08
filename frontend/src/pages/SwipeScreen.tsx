@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { getMovieFeed, sendSwipe, type Movie } from '../lib/api';
 import { MovieCard } from '../components/MovieCard';
 import { DetalhesFilme } from '../components/DetalhesFilme';
+import { txt } from '../lib/idioma';
 
 export function SwipeScreen() {
   const [movies, setMovies] = useState<Movie[]>([]);
@@ -38,7 +39,7 @@ export function SwipeScreen() {
         return [...prev, ...data.movies.filter((m) => !conhecidos.has(m.id))];
       });
     } catch {
-      setError('Não foi possível carregar os filmes.');
+      setError(txt.erroCarregarFilmes);
     } finally {
       buscando.current = false;
     }
@@ -64,7 +65,7 @@ export function SwipeScreen() {
       const { newMatches } = await sendSwipe(votado.id, liked);
       if (newMatches.length > 0) setMatchMovie(votado);
     } catch {
-      setError(`Não foi possível registrar seu voto em "${votado.title}".`);
+      setError(txt.erroVoto(votado.title));
     }
   }
 
@@ -73,8 +74,8 @@ export function SwipeScreen() {
       <div className="h-full flex items-center justify-center">
         <p className="text-center text-white/60 px-6">
           {fimDoFeed
-            ? 'Você já votou em tudo por aqui! Volte mais tarde para novidades.'
-            : 'Carregando filmes...'}
+            ? txt.fimDoFeed
+            : txt.carregandoFilmes}
         </p>
       </div>
     );
@@ -105,9 +106,9 @@ export function SwipeScreen() {
           onClick={() => setMatchMovie(null)}
         >
           <div className="text-center px-6">
-            <p className="font-display text-4xl text-amber-300 mb-2">Deu match! 🎬</p>
-            <p className="text-white/80">Todo mundo do grupo curtiu "{matchMovie.title}"</p>
-            <p className="text-white/40 text-sm mt-4">Toque em qualquer lugar para continuar</p>
+            <p className="font-display text-4xl text-amber-300 mb-2">{txt.deuMatch}</p>
+            <p className="text-white/80">{txt.todosCurtiram(matchMovie.title)}</p>
+            <p className="text-white/40 text-sm mt-4">{txt.toqueParaContinuar}</p>
           </div>
         </div>
       )}

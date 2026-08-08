@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { entrar, cadastrar, ApiError } from '../lib/api';
 import { salvarSessao, type Sessao } from '../lib/session';
 import { Aviso } from '../components/Aviso';
+import { txt } from '../lib/idioma';
 
 type Modo = 'login' | 'cadastro';
 
@@ -35,7 +36,7 @@ export function Auth({ onEntrar }: { onEntrar: (sessao: Sessao) => void }) {
       salvarSessao(sessao);
       onEntrar(sessao);
     } catch (err) {
-      setErro(err instanceof ApiError ? err.message : 'Algo deu errado. Tente de novo.');
+      setErro(err instanceof ApiError ? err.message : txt.algoDeuErrado);
     } finally {
       setEnviando(false);
     }
@@ -49,7 +50,7 @@ export function Auth({ onEntrar }: { onEntrar: (sessao: Sessao) => void }) {
       <div className="w-full max-w-sm">
         <h1 className="font-display text-4xl text-center mb-1">MovieMatch</h1>
         <p className="text-center text-white/50 text-sm mb-8">
-          Descubra o filme que todo mundo do grupo quer ver.
+          {txt.subtitulo}
         </p>
 
         <div className="flex gap-1 p-1 rounded-full bg-white/5 border border-white/10 mb-6">
@@ -62,7 +63,7 @@ export function Auth({ onEntrar }: { onEntrar: (sessao: Sessao) => void }) {
                 modo === m ? 'bg-accent text-ink font-semibold' : 'text-white/60 hover:text-white'
               }`}
             >
-              {m === 'login' ? 'Entrar' : 'Cadastrar'}
+              {m === 'login' ? txt.entrar : txt.cadastrar}
             </button>
           ))}
         </div>
@@ -71,7 +72,7 @@ export function Auth({ onEntrar }: { onEntrar: (sessao: Sessao) => void }) {
           <input
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            placeholder="Usuário"
+            placeholder={txt.usuario}
             autoComplete="username"
             autoCapitalize="none"
             className={inputClass}
@@ -80,7 +81,7 @@ export function Auth({ onEntrar }: { onEntrar: (sessao: Sessao) => void }) {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="Senha"
+            placeholder={txt.senha}
             autoComplete={modo === 'login' ? 'current-password' : 'new-password'}
             className={inputClass}
           />
@@ -89,7 +90,7 @@ export function Auth({ onEntrar }: { onEntrar: (sessao: Sessao) => void }) {
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Confirmar senha"
+              placeholder={txt.confirmarSenha}
               autoComplete="new-password"
               className={inputClass}
             />
@@ -100,23 +101,23 @@ export function Auth({ onEntrar }: { onEntrar: (sessao: Sessao) => void }) {
             disabled={enviando}
             className="mt-2 w-full py-2.5 rounded-full bg-accent2 text-ink font-semibold hover:brightness-110 transition disabled:opacity-50"
           >
-            {enviando ? 'Aguarde...' : modo === 'login' ? 'Entrar' : 'Criar conta'}
+            {enviando ? txt.aguarde : modo === 'login' ? txt.entrar : txt.criarConta}
           </button>
         </form>
 
         <p className="text-center text-white/40 text-xs mt-6">
           {modo === 'login' ? (
             <>
-              Não tem conta?{' '}
+              {txt.naoTemConta}{' '}
               <button onClick={() => trocarModo('cadastro')} className="text-accent2 hover:underline">
-                Cadastre-se
+                {txt.cadastreSe}
               </button>
             </>
           ) : (
             <>
-              Já tem conta?{' '}
+              {txt.jaTemConta}{' '}
               <button onClick={() => trocarModo('login')} className="text-accent2 hover:underline">
-                Entrar
+                {txt.entrar}
               </button>
             </>
           )}

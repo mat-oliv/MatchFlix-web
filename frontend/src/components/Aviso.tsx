@@ -1,3 +1,5 @@
+import { txt } from '../lib/idioma';
+
 type Props = {
   titulo?: string;
   mensagem: string;
@@ -5,7 +7,7 @@ type Props = {
 };
 
 /** Pop-up de aviso — usado para revelar exatamente qual erro a pessoa cometeu. */
-export function Aviso({ titulo = 'Ops!', mensagem, onFechar }: Props) {
+export function Aviso({ titulo = txt.ops, mensagem, onFechar }: Props) {
   return (
     <div
       className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center px-6"
@@ -24,7 +26,7 @@ export function Aviso({ titulo = 'Ops!', mensagem, onFechar }: Props) {
           onClick={onFechar}
           className="w-full py-2 rounded-full bg-accent2 text-ink font-semibold hover:brightness-110 transition"
         >
-          Entendi
+          {txt.entendi}
         </button>
       </div>
     </div>

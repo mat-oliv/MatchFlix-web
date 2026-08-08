@@ -4,6 +4,7 @@ import { Groups } from './pages/Groups';
 import { Auth } from './pages/Auth';
 import { MenuUsuario } from './components/MenuUsuario';
 import { ChatDuvidas } from './components/ChatDuvidas';
+import { txt } from './lib/idioma';
 import { getMeuPerfil } from './lib/api';
 import { lerSessao, limparSessao, type Sessao } from './lib/session';
 
@@ -53,7 +54,7 @@ export default function App() {
               tab === 'swipe' ? 'bg-accent text-ink font-semibold' : 'text-white/60 hover:text-white'
             }`}
           >
-            Filmes
+            {txt.abaFilmes}
           </button>
           <button
             onClick={() => setTab('groups')}
@@ -61,7 +62,7 @@ export default function App() {
               tab === 'groups' ? 'bg-accent text-ink font-semibold' : 'text-white/60 hover:text-white'
             }`}
           >
-            Grupos
+            {txt.abaGrupos}
           </button>
 
           <span className="text-white/20 mx-1">|</span>
@@ -101,8 +102,8 @@ export default function App() {
         <button
           onClick={() => setChatAberto(true)}
           aria-haspopup="dialog"
-          aria-label="Abrir dúvidas sobre o aplicativo"
-          title="Dúvidas sobre o app"
+          aria-label={txt.abrirChat}
+          title={txt.chatTitulo}
           className="fixed bottom-6 left-6 z-40 w-14 h-14 rounded-full bg-accent2 text-ink grid place-items-center shadow-lg shadow-black/40 hover:brightness-110 active:scale-95 transition"
         >
           {/* Balão de conversa em traço: a versão preenchida vira um borrão nesse tamanho. */}

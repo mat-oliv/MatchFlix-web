@@ -5,6 +5,7 @@ import { prisma } from '../lib/prisma.js';
 import { hashPassword, verifyPassword } from '../lib/password.js';
 import { criarToken } from '../lib/token.js';
 import { exigirAutenticacao } from '../lib/auth.js';
+import { textos } from '../lib/idioma.js';
 
 const USUARIO_MIN = 3;
 const SENHA_MIN = 6;
@@ -18,35 +19,37 @@ export async function authRoutes(app: FastifyInstance) {
       confirmPassword: z.string(),
     });
 
+    const t = textos(request);
+
     const parsed = bodySchema.safeParse(request.body);
     if (!parsed.success) {
-      return reply.status(400).send({ error: 'Preencha usuário, senha e confirmação.' });
+      return reply.status(400).send({ error: t.preenchaCadastro });
     }
 
     const username = parsed.data.username.trim();
     const { password, confirmPassword } = parsed.data;
 
     if (!username) {
-      return reply.status(400).send({ error: 'Informe um nome de usuário.' });
+      return reply.status(400).send({ error: t.informeUsuario });
     }
     if (username.length < USUARIO_MIN) {
       return reply
         .status(400)
-        .send({ error: `O usuário precisa ter pelo menos ${USUARIO_MIN} caracteres.` });
+        .send({ error: t.usuarioCurto(USUARIO_MIN) });
     }
     if (/\s/.test(username)) {
-      return reply.status(400).send({ error: 'O usuário não pode conter espaços.' });
+      return reply.status(400).send({ error: t.usuarioComEspacos });
     }
     if (!password) {
-      return reply.status(400).send({ error: 'Informe uma senha.' });
+      return reply.status(400).send({ error: t.informeSenha });
     }
     if (password.length < SENHA_MIN) {
       return reply
         .status(400)
-        .send({ error: `A senha precisa ter pelo menos ${SENHA_MIN} caracteres.` });
+        .send({ error: t.senhaCurta(SENHA_MIN) });
     }
     if (password !== confirmPassword) {
-      return reply.status(400).send({ error: 'As senhas não conferem.' });
+      return reply.status(400).send({ error: t.senhasNaoConferem });
     }
 
     try {
@@ -61,7 +64,7 @@ export async function authRoutes(app: FastifyInstance) {
       // P2002 = violação de unique. Cobre a corrida entre dois cadastros simultâneos,
       // que uma checagem prévia com findUnique deixaria passar.
       if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
-        return reply.status(409).send({ error: `O usuário "${username}" já está em uso.` });
+        return reply.status(409).send({ error: t.usuarioEmUso(username) });
       }
       throw err;
     }
@@ -70,21 +73,22 @@ export async function authRoutes(app: FastifyInstance) {
   // Login — mensagem genérica de propósito: distinguir "não existe" de "senha errada"
   // revelaria quais usuários têm conta no site.
   app.post('/auth/login', async (request, reply) => {
+    const t = textos(request);
     const bodySchema = z.object({ username: z.string(), password: z.string() });
 
     const parsed = bodySchema.safeParse(request.body);
     if (!parsed.success) {
-      return reply.status(400).send({ error: 'Preencha usuário e senha.' });
+      return reply.status(400).send({ error: t.preenchaLogin });
     }
 
     const username = parsed.data.username.trim();
     const { password } = parsed.data;
 
     if (!username || !password) {
-      return reply.status(400).send({ error: 'Preencha usuário e senha.' });
+      return reply.status(400).send({ error: t.preenchaLogin });
     }
 
-    const invalido = { error: 'Usuário ou senha inválidos.' };
+    const invalido = { error: t.credenciaisInvalidas };
 
     const user = await prisma.user.findUnique({ where: { username } });
     if (!user?.passwordHash) return reply.status(401).send(invalido);
@@ -97,12 +101,13 @@ export async function authRoutes(app: FastifyInstance) {
 
   // Usado no boot do frontend pra saber se o token guardado ainda vale.
   app.get('/auth/me', { preHandler: exigirAutenticacao }, async (request, reply) => {
+    const t = textos(request);
     const user = await prisma.user.findUnique({
       where: { id: request.userId },
       select: { id: true, username: true },
     });
 
-    if (!user) return reply.status(401).send({ error: 'Usuário não encontrado.' });
+    if (!user) return reply.status(401).send({ error: t.usuarioNaoEncontrado });
     return reply.send({ user });
   });
 }

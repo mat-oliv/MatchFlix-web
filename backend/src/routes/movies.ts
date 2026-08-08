@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { fetchPopularMovies, type TmdbMovie } from '../lib/tmdb.js';
 import { prisma } from '../lib/prisma.js';
 import { exigirAutenticacao } from '../lib/auth.js';
+import { idiomaDaRequisicao } from '../lib/idioma.js';
 
 // A TMDB tem centenas de páginas de populares. Começar sempre na 1 fazia todo mundo
 // ver os mesmos 20 filmes toda vez — sortear a página inicial dá variedade entre sessões.
@@ -42,7 +43,7 @@ export async function movieRoutes(app: FastifyInstance) {
     const novos: TmdbMovie[] = [];
 
     for (let i = 0; i < MAX_PAGINAS_POR_REQUISICAO && novos.length < MIN_FILMES; i++) {
-      const filmes = await fetchPopularMovies(pagina);
+      const filmes = await fetchPopularMovies(idiomaDaRequisicao(request), pagina);
       if (filmes.length === 0) break;
 
       novos.push(...filmes.filter((m) => !jaVotados.has(m.id)));

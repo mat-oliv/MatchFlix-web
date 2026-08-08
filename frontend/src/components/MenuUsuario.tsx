@@ -7,6 +7,7 @@ import {
   type FilmeResumo,
   type Perfil,
 } from '../lib/api';
+import { txt } from '../lib/idioma';
 
 type Props = {
   onFechar: () => void;
@@ -33,7 +34,7 @@ async function prepararFoto(arquivo: File): Promise<string> {
     const img = await new Promise<HTMLImageElement>((resolve, reject) => {
       const imagem = new Image();
       imagem.onload = () => resolve(imagem);
-      imagem.onerror = () => reject(new Error('Não foi possível ler esta imagem.'));
+      imagem.onerror = () => reject(new Error(txt.erroLerImagem));
       imagem.src = url;
     });
 
@@ -43,7 +44,7 @@ async function prepararFoto(arquivo: File): Promise<string> {
     canvas.height = TAMANHO_AVATAR;
 
     const ctx = canvas.getContext('2d');
-    if (!ctx) throw new Error('Não foi possível processar a imagem.');
+    if (!ctx) throw new Error(txt.erroProcessarImagem);
 
     ctx.drawImage(
       img,
@@ -101,7 +102,7 @@ export function MenuUsuario({ onFechar, onSair, onFotoAtualizada }: Props) {
       });
     } catch (err) {
       // Sem sentinela enquanto houver erro, senão o observer tentaria de novo em loop.
-      setErroPagina(mensagemDoErro(err, 'Não foi possível carregar mais filmes.'));
+      setErroPagina(mensagemDoErro(err, txt.erroMaisFilmes));
     } finally {
       buscando.current = false;
     }
@@ -115,7 +116,7 @@ export function MenuUsuario({ onFechar, onSair, onFotoAtualizada }: Props) {
         // miniatura acerta.
         onFotoAtualizada(dados.user.avatarUrl);
       })
-      .catch((err) => setErro(mensagemDoErro(err, 'Não foi possível carregar seu perfil.')));
+      .catch((err) => setErro(mensagemDoErro(err, txt.erroPerfil)));
 
     carregarMais();
   }, [carregarMais, onFotoAtualizada]);
@@ -151,7 +152,7 @@ export function MenuUsuario({ onFechar, onSair, onFotoAtualizada }: Props) {
     if (!arquivo) return;
 
     if (!arquivo.type.startsWith('image/')) {
-      setErroFoto('Escolha um arquivo de imagem.');
+      setErroFoto(txt.escolhaImagem);
       return;
     }
 
@@ -163,7 +164,7 @@ export function MenuUsuario({ onFechar, onSair, onFotoAtualizada }: Props) {
       setPerfil((atual) => (atual ? { ...atual, user: { ...atual.user, avatarUrl } } : atual));
       onFotoAtualizada(avatarUrl);
     } catch (err) {
-      setErroFoto(mensagemDoErro(err, 'Não foi possível salvar a foto.'));
+      setErroFoto(mensagemDoErro(err, txt.erroSalvarFoto));
     } finally {
       setEnviandoFoto(false);
     }
@@ -178,7 +179,7 @@ export function MenuUsuario({ onFechar, onSair, onFotoAtualizada }: Props) {
       className="fixed inset-0 z-50 bg-black/70 flex items-start justify-center px-4 py-10 overflow-y-auto"
       role="dialog"
       aria-modal="true"
-      aria-label="Menu do usuário"
+      aria-label={txt.menuUsuario}
       onClick={onFechar}
     >
       <div
@@ -192,7 +193,7 @@ export function MenuUsuario({ onFechar, onSair, onFotoAtualizada }: Props) {
               type="button"
               onClick={() => arquivoRef.current?.click()}
               disabled={enviandoFoto}
-              aria-label="Escolher foto de perfil"
+              aria-label={txt.escolherFoto}
               className="block w-16 h-16 rounded-full bg-white overflow-hidden"
             >
               {perfil?.user.avatarUrl && (
@@ -205,7 +206,7 @@ export function MenuUsuario({ onFechar, onSair, onFotoAtualizada }: Props) {
                 erroFoto ? 'text-rose-300' : 'text-white/40'
               }`}
             >
-              {erroFoto ?? (enviandoFoto ? 'Enviando...' : 'Clique para alterar')}
+              {erroFoto ?? (enviandoFoto ? txt.enviandoFoto : txt.cliqueParaAlterar)}
             </p>
 
             <input
@@ -224,18 +225,18 @@ export function MenuUsuario({ onFechar, onSair, onFotoAtualizada }: Props) {
             <p className="text-sm text-white/50 mt-0.5">
               {perfil ? (
                 <>
-                  {perfil.groupCount} {perfil.groupCount === 1 ? 'grupo' : 'grupos'} ·{' '}
-                  {perfil.likedCount} {perfil.likedCount === 1 ? 'curtido' : 'curtidos'}
+                  {perfil.groupCount} {txt.gruposContagem(perfil.groupCount)} ·{' '}
+                  {perfil.likedCount} {txt.curtidosContagem(perfil.likedCount)}
                 </>
               ) : (
-                'carregando...'
+                txt.carregandoMinusculo
               )}
             </p>
           </div>
 
           <button
             onClick={onFechar}
-            aria-label="Fechar"
+            aria-label={txt.fechar}
             className="shrink-0 w-8 h-8 rounded-full text-white/50 hover:text-white hover:bg-white/10 transition"
           >
             ✕
@@ -243,15 +244,15 @@ export function MenuUsuario({ onFechar, onSair, onFotoAtualizada }: Props) {
         </header>
 
         <section className="p-5">
-          <h3 className="font-display text-sm text-white/70 mb-3">Filmes curtidos</h3>
+          <h3 className="font-display text-sm text-white/70 mb-3">{txt.filmesCurtidos}</h3>
 
           {erro ? (
             <p className="text-sm text-rose-300">{erro}</p>
           ) : carregandoPrimeiraPagina ? (
-            <p className="text-sm text-white/40">Carregando...</p>
+            <p className="text-sm text-white/40">{txt.carregando}</p>
           ) : curtidos.length === 0 && !erroPagina ? (
             <p className="text-sm text-white/40">
-              Você ainda não curtiu nenhum filme. Vá para a aba Filmes!
+              {txt.semCurtidos}
             </p>
           ) : (
             <div
@@ -271,7 +272,7 @@ export function MenuUsuario({ onFechar, onSair, onFotoAtualizada }: Props) {
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-[10px] text-white/40 text-center px-1">
-                          Sem pôster
+                          {txt.semPoster}
                         </div>
                       )}
                     </div>
@@ -289,13 +290,13 @@ export function MenuUsuario({ onFechar, onSair, onFotoAtualizada }: Props) {
                     onClick={carregarMais}
                     className="text-xs px-3 py-1.5 rounded-full bg-white/10 border border-white/20 hover:bg-white/15 transition"
                   >
-                    Tentar de novo
+                    {txt.tentarDeNovo}
                   </button>
                 </div>
               ) : (
                 temMais && (
                   <div ref={sentinela} className="py-3 text-center text-xs text-white/40">
-                    Carregando mais...
+                    {txt.carregandoMais}
                   </div>
                 )
               )}
@@ -308,7 +309,7 @@ export function MenuUsuario({ onFechar, onSair, onFotoAtualizada }: Props) {
             onClick={onSair}
             className="w-full py-2 rounded-full text-sm text-white/70 border border-white/15 hover:text-white hover:border-white/30 transition"
           >
-            Sair da conta
+            {txt.sairDaConta}
           </button>
         </footer>
       </div>

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { perguntarAoAssistente, ApiError, type FalaDoChat } from '../lib/api';
+import { txt } from '../lib/idioma';
 
 type Autor = 'pessoa' | 'assistente' | 'erro';
 
@@ -23,9 +24,7 @@ const BOAS_VINDAS: Mensagem = {
   id: 0,
   autor: 'assistente',
   apenasLocal: true,
-  texto:
-    'Oi! Por aqui você tira dúvidas sobre o MovieMatch — como montar um grupo, como o ' +
-    'match acontece, o que aparece no feed. Pergunte à vontade.',
+  texto: txt.chatBoasVindas,
 };
 
 /**
@@ -88,7 +87,7 @@ export function ChatDuvidas({ onFechar }: Props) {
         texto:
           erro instanceof ApiError
             ? erro.message
-            : 'Não consegui falar com o assistente agora.',
+            : txt.erroAssistente,
       });
     } finally {
       setPensando(false);
@@ -100,7 +99,7 @@ export function ChatDuvidas({ onFechar }: Props) {
       className="fixed inset-0 z-50 bg-black/40 flex items-end justify-start p-4 sm:p-6"
       role="dialog"
       aria-modal="true"
-      aria-label="Dúvidas sobre o aplicativo"
+      aria-label={txt.chatTitulo}
       onClick={onFechar}
     >
       <div
@@ -109,13 +108,13 @@ export function ChatDuvidas({ onFechar }: Props) {
       >
         <header className="shrink-0 flex items-center gap-3 px-5 py-4 border-b border-white/10">
           <div className="min-w-0 flex-1">
-            <h2 className="font-display text-lg leading-tight">Dúvidas sobre o app</h2>
-            <p className="text-xs text-white/40 mt-0.5">Respostas de um assistente — pode errar</p>
+            <h2 className="font-display text-lg leading-tight">{txt.chatTitulo}</h2>
+            <p className="text-xs text-white/40 mt-0.5">{txt.chatSubtitulo}</p>
           </div>
 
           <button
             onClick={onFechar}
-            aria-label="Fechar"
+            aria-label={txt.fechar}
             className="shrink-0 w-8 h-8 rounded-full text-white/50 hover:text-white hover:bg-white/10 transition"
           >
             ✕
@@ -144,14 +143,14 @@ export function ChatDuvidas({ onFechar }: Props) {
             onChange={(e) => setRascunho(e.target.value)}
             disabled={pensando}
             maxLength={1000}
-            placeholder={pensando ? 'Aguarde a resposta…' : 'Escreva sua dúvida…'}
-            aria-label="Sua dúvida"
+            placeholder={pensando ? txt.aguardeResposta : txt.escrevaDuvida}
+            aria-label={txt.suaDuvida}
             className="flex-1 min-w-0 px-4 py-2 rounded-full bg-black/30 border border-white/10 text-sm placeholder:text-white/30 focus:outline-none focus:border-accent2/60 disabled:opacity-50 transition"
           />
           <button
             type="submit"
             disabled={!rascunho.trim() || pensando}
-            aria-label="Enviar"
+            aria-label={txt.enviar}
             className="shrink-0 w-10 h-10 rounded-full bg-accent2 text-ink grid place-items-center hover:brightness-110 disabled:opacity-30 disabled:hover:brightness-100 transition"
           >
             <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor" aria-hidden="true">
@@ -189,7 +188,7 @@ function Balao({ mensagem }: { mensagem: Mensagem }) {
 /** Três pontinhos enquanto a resposta não chega. */
 function Pensando() {
   return (
-    <div className="flex justify-start" aria-label="Escrevendo a resposta">
+    <div className="flex justify-start" aria-label={txt.escrevendoResposta}>
       <div className="bg-white/10 rounded-2xl rounded-bl-md px-4 py-3 flex gap-1.5">
         {[0, 150, 300].map((atraso) => (
           <span
