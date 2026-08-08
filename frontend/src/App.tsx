@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { SwipeScreen } from './pages/SwipeScreen';
 import { Groups } from './pages/Groups';
+import { Ranking } from './pages/Ranking';
 import { Auth } from './pages/Auth';
 import { MenuUsuario } from './components/MenuUsuario';
 import { ChatDuvidas } from './components/ChatDuvidas';
@@ -10,7 +11,7 @@ import { lerSessao, limparSessao, type Sessao } from './lib/session';
 
 export default function App() {
   const [sessao, setSessao] = useState<Sessao | null>(() => lerSessao());
-  const [tab, setTab] = useState<'swipe' | 'groups'>('swipe');
+  const [tab, setTab] = useState<'swipe' | 'groups' | 'ranking'>('swipe');
   const [menuAberto, setMenuAberto] = useState(false);
   const [chatAberto, setChatAberto] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -64,6 +65,14 @@ export default function App() {
           >
             {txt.abaGrupos}
           </button>
+          <button
+            onClick={() => setTab('ranking')}
+            className={`px-4 py-1.5 rounded-full text-sm transition ${
+              tab === 'ranking' ? 'bg-accent text-ink font-semibold' : 'text-white/60 hover:text-white'
+            }`}
+          >
+            {txt.abaRanking}
+          </button>
 
           <span className="text-white/20 mx-1">|</span>
           <button
@@ -84,8 +93,12 @@ export default function App() {
       </header>
 
       {/* Filmes cabe na tela; Grupos é lista e rola por conta própria. */}
-      <main className={`flex-1 min-h-0 px-4 ${tab === 'groups' ? 'overflow-y-auto' : ''}`}>
-        {tab === 'swipe' ? <SwipeScreen /> : <Groups />}
+      <main className={`flex-1 min-h-0 px-4 ${tab === 'swipe' ? '' : 'overflow-y-auto'}`}>
+        {tab === 'swipe' && <SwipeScreen />}
+        {tab === 'groups' && <Groups />}
+        {/* Monta só quando aberta: a busca do ranking mora no efeito do componente,
+            então quem nunca entra aqui nunca dispara a requisição. */}
+        {tab === 'ranking' && <Ranking />}
       </main>
 
       {menuAberto && (

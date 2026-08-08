@@ -23,6 +23,7 @@
 - [Sem Docker](#sem-docker)
 - [Scripts](#scripts)
 - [Deploy na Vercel](#deploy-na-vercel)
+- [Ranking da semana](#ranking-da-semana)
 - [Idioma](#idioma)
 - [Chat de dúvidas](#chat-de-dúvidas)
 - [Decisões de arquitetura](#decisões-de-arquitetura)
@@ -44,6 +45,7 @@ grupo e registra o match assim que todos os membros curtiram o mesmo título.
 - Grupos com código de convite para compartilhar
 - Match automático no momento do scroll, com aviso na tela
 - Menu do usuário com contadores e a lista de filmes curtidos (carregada de 20 em 20)
+- **Ranking global** dos filmes mais curtidos nos últimos 7 dias
 - **Interface em português ou inglês**, escolhida pelo idioma do navegador
 - Chat de dúvidas sobre o app, no canto inferior esquerdo, respondido por um assistente
   (Gemini 3.5 Flash). Opcional: sem `GEMINI_API_KEY` o resto do app funciona igual
@@ -305,6 +307,40 @@ existem em produção; para criá-las, rode `npm run seed` apontando para o banc
 > No plano Hobby a função tem limite de 10s por requisição. A rota do feed pode buscar
 > várias páginas na TMDB em sequência — se ela chegar perto do limite, reduza
 > `MAX_PAGINAS_POR_REQUISICAO` em `backend/src/routes/movies.ts`.
+
+## Ranking da semana
+
+A aba **Ranking** mostra os dez filmes mais curtidos por todo mundo nos últimos 7 dias
+corridos (não a semana do calendário). `GET /movies/leaderboard`.
+
+O ponto de partida foi não pagar caro por um número que muda devagar:
+
+- **Nenhum dado novo é gravado.** A contagem sai dos swipes que já existem. Um contador
+  por filme leria mais rápido, mas custaria uma escrita a cada like e mais uma tabela
+  para manter correta — caro demais para algo que se consulta de vez em quando.
+- **Um índice, criado só para esta consulta**: `@@index([liked, createdAt, movieId])`.
+  A ordem é o que importa: `liked` e `createdAt` transformam o filtro numa faixa contígua
+  do índice, e `movieId` no fim permite ao Postgres agrupar sem ler a tabela. Medido com
+  200 mil votos:
+
+  | | Com índice | Sem índice |
+  | --- | --- | --- |
+  | Plano | Index Only Scan (`Heap Fetches: 0`) | Seq Scan |
+  | Páginas lidas | 121 | 1.471 |
+  | Tempo | **10,7 ms** | 43,2 ms |
+
+  O índice ocupa cerca de 40 bytes por voto (8 MB para 200 mil), a proporção normal de um
+  B-tree — o índice de unicidade que já existia tem tamanho parecido.
+- **O resultado pronto fica em memória por 5 minutos**, por idioma. É o que mais pesa:
+  o caro não é o `GROUP BY`, são as até dez consultas à TMDB para transformar `movieId`
+  em título e pôster. Medido: **680 ms na primeira chamada, 0,7 ms nas seguintes**. Na
+  Vercel cada instância tem o seu cache, então o aproveitamento é menor que num servidor
+  de longa duração.
+- **A tela só busca quando é aberta.** Quem nunca entra na aba não dispara requisição
+  nenhuma — confirmado no build de produção.
+
+Como a contagem vem dos swipes, e um swipe é único por pessoa e filme, ninguém consegue
+inflar o ranking curtindo o mesmo filme várias vezes.
 
 ## Idioma
 
