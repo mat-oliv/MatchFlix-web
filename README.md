@@ -42,6 +42,8 @@ grupo e registra o match assim que todos os membros curtiram o mesmo título.
 - Grupos com código de convite para compartilhar
 - Match automático no momento do scroll, com aviso na tela
 - Menu do usuário com contadores e a lista de filmes curtidos (carregada de 20 em 20)
+- Chat de dúvidas sobre o app, no canto inferior esquerdo, respondido por um assistente
+  (Gemini 3.5 Flash). Opcional: sem `GEMINI_API_KEY` o resto do app funciona igual
 
 ## Como funciona
 
@@ -108,7 +110,7 @@ O frontend passa a responder em http://localhost:5173. É um arquivo completo, n
 override: rode **um ou outro**, nunca os dois juntos (disputam nomes de container e
 portas). Se mexer em algum `package.json`, recrie os volumes anônimos com `-V`.
 
-Comandos úteis:
+/u/btwComandos úteis:
 
 ```bash
 docker compose logs -f backend                   # acompanhar logs
@@ -204,7 +206,8 @@ DATABASE_URL="<pooled>" DIRECT_URL="<direta>" npx prisma migrate deploy
 ### 2. Projeto da API
 
 - **Root Directory**: `backend`
-- **Variáveis**: `DATABASE_URL`, `DIRECT_URL`, `TMDB_API_KEY`, `AUTH_SECRET`
+- **Variáveis**: `DATABASE_URL`, `DIRECT_URL`, `TMDB_API_KEY`, `AUTH_SECRET` e,
+  se quiser o chat de dúvidas, `GEMINI_API_KEY`
 - Anote a URL gerada (algo como `https://moviematch-api.vercel.app`)
 
 Não mexa em Build Command nem Output Directory no painel: o `backend/vercel.json` já
@@ -299,6 +302,47 @@ existem em produção; para criá-las, rode `npm run seed` apontando para o banc
 > No plano Hobby a função tem limite de 10s por requisição. A rota do feed pode buscar
 > várias páginas na TMDB em sequência — se ela chegar perto do limite, reduza
 > `MAX_PAGINAS_POR_REQUISICAO` em `backend/src/routes/movies.ts`.
+
+## Chat de dúvidas
+
+O botão redondo no canto inferior esquerdo abre um chat que responde perguntas sobre o
+próprio app, usando o **Gemini 3.5 Flash** pelo nível gratuito do Google AI Studio.
+Pegue a chave em https://aistudio.google.com/apikey.
+
+> **Se o chat começar a falhar sempre, desconfie do modelo.** O Google aposenta modelo
+> para chaves novas sem tirá-lo da listagem: o `gemini-2.5-flash` continua aparecendo em
+> `models.list()` e mesmo assim o `generateContent` responde 404 "no longer available to
+> new users". Listar não prova que dá para usar — teste uma chamada de verdade.
+
+- **A chave vive só no backend.** O navegador chama `POST /chat` (rota protegida por
+  login) e é o servidor que fala com o Gemini. Chave de API em variável `VITE_` seria
+  chave publicada — todo `VITE_` acaba dentro do JavaScript que qualquer um baixa.
+- **Nada é guardado.** A conversa vive na tela e some ao recarregar; o histórico inteiro
+  sobe a cada pergunta para o assistente ter contexto. Sem tabela, sem migration.
+- **O assistente sabe o que o app NÃO tem.** As instruções listam explicitamente o que
+  não existe (sair de grupo, desfazer like, recuperar senha, buscar filme). Sem essa
+  lista o modelo preenche a lacuna com o que seria razoável existir e manda a pessoa
+  procurar um botão inexistente — o erro mais caro aqui, porque soa plausível.
+- **O "pensamento" do modelo fica desligado** (`thinkingBudget: 0`). O Flash raciocina
+  antes de responder por padrão, e esse raciocínio gasta o mesmo orçamento de
+  `maxOutputTokens` — medido: 207 a 284 tokens pensando para responder 29. Com o teto de
+  400 daqui, uma pergunta mais difícil consome tudo no raciocínio e devolve texto
+  **vazio**, falha silenciosa e difícil de achar. Uma FAQ não precisa disso.
+  Atenção ao trocar de modelo: os mais novos (`3.6-flash`, `3.5-flash-lite`) **recusam**
+  esse campo com 400. Se for para um deles, tire a linha e suba o `maxOutputTokens`.
+- **O nível gratuito permite 5 requisições por minuto** por modelo. Duas ou três pessoas
+  perguntando ao mesmo tempo já esbarram nisso, então o 429 do Google vira um 429 nosso
+  com mensagem própria ("Muita gente perguntando agora"), em vez do erro genérico.
+- **Travas de cota**: pergunta de até 1000 caracteres, 20 falas de contexto,
+  `maxOutputTokens` de 400 e 20 perguntas por hora por pessoa. O contador de perguntas
+  fica na memória do processo, então na Vercel, com várias instâncias, o teto real é
+  maior — ele segura engano e script bobo, não um ataque. Para valer de verdade, precisa
+  virar tabela no Postgres.
+- **Sem a chave, o app inteiro continua funcionando**: só o chat responde 503 e mostra o
+  aviso na conversa.
+
+Para testar sem chave e sem consumir cota, defina `GEMINI_BASE_URL` apontando para um
+servidor local que devolva uma resposta no formato da API — a rota funciona ponta a ponta.
 
 ## Decisões de arquitetura
 

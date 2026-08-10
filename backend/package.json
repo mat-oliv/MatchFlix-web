@@ -22,12 +22,13 @@
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
-    "fastify": "^4.28.1",
     "@fastify/cors": "^9.0.1",
+    "@google/genai": "^2.16.0",
     "@prisma/client": "^5.18.0",
-    "zod": "^3.23.8",
     "dotenv": "^16.4.5",
-    "nanoid": "^5.0.7"
+    "fastify": "^4.28.1",
+    "nanoid": "^5.0.7",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",

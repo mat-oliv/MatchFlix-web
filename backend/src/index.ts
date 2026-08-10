@@ -7,6 +7,7 @@ import { groupRoutes } from './routes/groups.js';
 import { movieRoutes } from './routes/movies.js';
 import { profileRoutes } from './routes/profile.js';
 import { swipeRoutes } from './routes/swipes.js';
+import { chatRoutes } from './routes/chat.js';
 
 // Entrada da Vercel. Lá a API não é um processo escutando porta: o runtime carrega este
 // arquivo e chama o `export default` a cada requisição. Quem sobe servidor de verdade é
@@ -59,6 +60,7 @@ export async function construirApp() {
   await app.register(profileRoutes);
   await app.register(movieRoutes);
   await app.register(swipeRoutes);
+  await app.register(chatRoutes);
 
   app.get('/health', async () => ({ status: 'ok' }));
 
