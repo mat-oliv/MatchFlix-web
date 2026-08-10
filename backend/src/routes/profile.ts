@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
 import { enriquecerFilmes } from '../lib/tmdb.js';
 import { exigirAutenticacao } from '../lib/auth.js';
+import { idiomaDaRequisicao, textos } from '../lib/idioma.js';
 
 // Cada página custa uma busca na TMDB por filme (a primeira vez; depois é cache).
 // 20 enche a grade do menu sem fazer ninguém esperar a lista inteira.
@@ -31,7 +32,7 @@ export async function profileRoutes(app: FastifyInstance) {
       prisma.swipe.count({ where: { userId, liked: true } }),
     ]);
 
-    if (!user) return reply.status(401).send({ error: 'Usuário não encontrado.' });
+    if (!user) return reply.status(401).send({ error: textos(request).usuarioNaoEncontrado });
 
     return reply.send({ user, groupCount, likedCount });
   });
@@ -46,7 +47,7 @@ export async function profileRoutes(app: FastifyInstance) {
     if (!parsed.success) {
       return reply
         .status(400)
-        .send({ error: 'Imagem inválida ou grande demais. Tente outra foto.' });
+        .send({ error: textos(request).imagemInvalida });
     }
 
     const user = await prisma.user.update({
@@ -79,7 +80,7 @@ export async function profileRoutes(app: FastifyInstance) {
     const pagina = temMais ? swipes.slice(0, TAMANHO_PAGINA) : swipes;
 
     return reply.send({
-      movies: await enriquecerFilmes(pagina),
+      movies: await enriquecerFilmes(pagina, idiomaDaRequisicao(request)),
       nextCursor: temMais ? pagina[pagina.length - 1].id : null,
     });
   });

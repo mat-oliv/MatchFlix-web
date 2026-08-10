@@ -1,4 +1,5 @@
 import { lerSessao, limparSessao, type Sessao } from './session';
+import { idioma, txt } from './idioma';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3333';
 
@@ -14,24 +15,28 @@ async function pedir<T>(path: string, init?: RequestInit): Promise<T> {
       ...init,
       headers: {
         'Content-Type': 'application/json',
+        // Diz ao backend em que idioma devolver mensagem de erro, filme da TMDB e
+        // resposta do assistente. Sem isto a tela ficaria em inglês e os erros que
+        // vêm da API, em português.
+        'Accept-Language': idioma === 'pt' ? 'pt-BR' : 'en',
         ...(sessao ? { Authorization: `Bearer ${sessao.token}` } : {}),
         ...init?.headers,
       },
     });
   } catch {
-    throw new ApiError('Não foi possível falar com o servidor. Ele está rodando?');
+    throw new ApiError(txt.semServidor);
   }
 
   // 401 com sessão guardada = token venceu ou foi invalidado: derruba e volta pro login.
   if (res.status === 401 && sessao) {
     limparSessao();
     window.location.reload();
-    throw new ApiError('Sessão expirada.');
+    throw new ApiError(txt.sessaoExpirada);
   }
 
   if (!res.ok) {
     const corpo = await res.json().catch(() => null);
-    throw new ApiError(corpo?.error ?? 'Não foi possível completar a operação.');
+    throw new ApiError(corpo?.error ?? txt.operacaoFalhou);
   }
 
   return res.json();

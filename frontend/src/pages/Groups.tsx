@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { createGroup, joinGroup, getMeusGrupos, ApiError, type UserGroup } from '../lib/api';
+import { txt } from '../lib/idioma';
 
 function mensagemDoErro(err: unknown, padrao: string) {
   return err instanceof ApiError ? err.message : padrao;
@@ -19,7 +20,7 @@ export function Groups() {
       setGrupos(await getMeusGrupos());
       setError('');
     } catch (err) {
-      setError(mensagemDoErro(err, 'Não foi possível carregar seus grupos.'));
+      setError(mensagemDoErro(err, txt.erroCarregarGrupos));
     } finally {
       setCarregando(false);
     }
@@ -34,11 +35,11 @@ export function Groups() {
     setError('');
     try {
       const group = await createGroup(groupName.trim());
-      setMessage(`Grupo "${group.name}" criado!`);
+      setMessage(txt.grupoCriado(group.name));
       setGroupName('');
       await carregarGrupos();
     } catch (err) {
-      setError(mensagemDoErro(err, 'Não foi possível criar o grupo.'));
+      setError(mensagemDoErro(err, txt.erroCriarGrupo));
     }
   }
 
@@ -47,11 +48,11 @@ export function Groups() {
     setError('');
     try {
       const group = await joinGroup(inviteCode.trim());
-      setMessage(`Você entrou em "${group.name}"!`);
+      setMessage(txt.entrouNoGrupo(group.name));
       setInviteCode('');
       await carregarGrupos();
     } catch (err) {
-      setError(mensagemDoErro(err, 'Código de convite não encontrado.'));
+      setError(mensagemDoErro(err, txt.erroConvite));
     }
   }
 
@@ -61,7 +62,7 @@ export function Groups() {
       setCopiado(inviteCode);
       setTimeout(() => setCopiado(null), 2000);
     } catch {
-      setError('Não foi possível copiar o código.');
+      setError(txt.erroCopiar);
     }
   }
 
@@ -69,36 +70,36 @@ export function Groups() {
     <div className="max-w-lg mx-auto py-10 flex flex-col gap-10">
       <div className="flex flex-col gap-8 sm:flex-row">
         <div className="flex-1">
-          <h2 className="font-display text-lg mb-2">Criar grupo</h2>
+          <h2 className="font-display text-lg mb-2">{txt.criarGrupo}</h2>
           <input
             value={groupName}
             onChange={(e) => setGroupName(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
-            placeholder="Nome do grupo"
+            placeholder={txt.nomeDoGrupo}
             className="w-full px-4 py-2 rounded-full bg-white/5 border border-white/10 mb-2 outline-none focus:border-accent2"
           />
           <button
             onClick={handleCreate}
             className="w-full py-2 rounded-full bg-accent2 text-ink font-semibold hover:brightness-110 transition"
           >
-            Criar
+            {txt.criar}
           </button>
         </div>
 
         <div className="flex-1">
-          <h2 className="font-display text-lg mb-2">Entrar em um grupo</h2>
+          <h2 className="font-display text-lg mb-2">{txt.entrarEmGrupo}</h2>
           <input
             value={inviteCode}
             onChange={(e) => setInviteCode(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleJoin()}
-            placeholder="Código de convite"
+            placeholder={txt.codigoConvite}
             className="w-full px-4 py-2 rounded-full bg-white/5 border border-white/10 mb-2 outline-none focus:border-accent2"
           />
           <button
             onClick={handleJoin}
             className="w-full py-2 rounded-full bg-white/10 border border-white/20 font-semibold hover:bg-white/15 transition"
           >
-            Entrar
+            {txt.entrarNoGrupo}
           </button>
         </div>
       </div>
@@ -107,13 +108,13 @@ export function Groups() {
       {error && <p className="text-center text-rose-300 text-sm">{error}</p>}
 
       <section>
-        <h2 className="font-display text-lg mb-4">Meus grupos</h2>
+        <h2 className="font-display text-lg mb-4">{txt.meusGrupos}</h2>
 
         {carregando ? (
-          <p className="text-white/50 text-sm">Carregando...</p>
+          <p className="text-white/50 text-sm">{txt.carregando}</p>
         ) : grupos.length === 0 ? (
           <p className="text-white/50 text-sm">
-            Você ainda não está em nenhum grupo. Crie um acima e mande o link pros seus amigos.
+            {txt.semGrupos}
           </p>
         ) : (
           <div className="flex flex-col gap-4">
@@ -122,13 +123,13 @@ export function Groups() {
                 <header className="flex items-baseline justify-between gap-3 mb-3">
                   <h3 className="font-display text-xl">{grupo.name}</h3>
                   <p className="text-sm text-white/50 shrink-0">
-                    {grupo.memberCount} {grupo.memberCount === 1 ? 'membro' : 'membros'} ·{' '}
-                    {grupo.matchCount} {grupo.matchCount === 1 ? 'match' : 'matches'}
+                    {grupo.memberCount} {txt.membros(grupo.memberCount)} ·{' '}
+                    {grupo.matchCount} {txt.partidas(grupo.matchCount)}
                   </p>
                 </header>
 
                 <div className="flex items-center gap-2 mb-4">
-                  <span className="text-xs text-white/40 shrink-0">Convite:</span>
+                  <span className="text-xs text-white/40 shrink-0">{txt.convite}</span>
                   <code className="font-mono tracking-widest text-sm text-accent2 bg-black/30 rounded-full px-3 py-2">
                     {grupo.inviteCode}
                   </code>
@@ -136,13 +137,13 @@ export function Groups() {
                     onClick={() => copiarConvite(grupo.inviteCode)}
                     className="shrink-0 text-xs px-3 py-2 rounded-full bg-white/10 border border-white/20 hover:bg-white/15 transition"
                   >
-                    {copiado === grupo.inviteCode ? 'Copiado!' : 'Copiar'}
+                    {copiado === grupo.inviteCode ? txt.copiado : txt.copiar}
                   </button>
                 </div>
 
                 {grupo.matches.length === 0 ? (
                   <p className="text-sm text-white/40">
-                    Nenhum match ainda. Curtam filmes na aba Filmes!
+                    {txt.nenhumMatch}
                   </p>
                 ) : (
                   <div className="flex gap-3 overflow-x-auto pb-1">
@@ -157,7 +158,7 @@ export function Groups() {
                             />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-[10px] text-white/40 text-center px-1">
-                              Sem pôster
+                              {txt.semPoster}
                             </div>
                           )}
                         </div>

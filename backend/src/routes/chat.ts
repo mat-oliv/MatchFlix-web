@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { exigirAutenticacao } from '../lib/auth.js';
+import { idiomaDaRequisicao, textos } from '../lib/idioma.js';
 import { AssistenteIndisponivel, CotaEsgotada, responderDuvida } from '../lib/chatbot.js';
 
 /** Tamanho máximo de uma fala. Dúvida sobre o app não precisa de mais que isto. */
@@ -54,26 +55,27 @@ export async function chatRoutes(app: FastifyInstance) {
   // gratuito), e conversa aberta na internet esgota isso rápido. O userId sai do token,
   // nunca do corpo.
   app.post('/chat', { preHandler: exigirAutenticacao }, async (request, reply) => {
+    const t = textos(request);
     const parsed = bodySchema.safeParse(request.body);
     if (!parsed.success) {
-      return reply.status(400).send({ error: 'Pergunta inválida ou longa demais.' });
+      return reply.status(400).send({ error: t.perguntaInvalida });
     }
 
     const { conversa } = parsed.data;
 
     // Sem isto dá para fazer o modelo continuar a própria fala, que é caro e sem sentido.
     if (conversa[conversa.length - 1].autor !== 'pessoa') {
-      return reply.status(400).send({ error: 'A última mensagem precisa ser sua.' });
+      return reply.status(400).send({ error: t.ultimaFalaPrecisaSerSua });
     }
 
     if (excedeuOLimite(request.userId)) {
       return reply
         .status(429)
-        .send({ error: 'Você fez muitas perguntas seguidas. Tente de novo mais tarde.' });
+        .send({ error: t.muitasPerguntas });
     }
 
     try {
-      const resposta = await responderDuvida(conversa);
+      const resposta = await responderDuvida(conversa, idiomaDaRequisicao(request));
       return reply.send({ resposta });
     } catch (erro) {
       // O log usa a chave `err`, e não um nome qualquer: o pino só serializa Error com
@@ -85,7 +87,7 @@ export async function chatRoutes(app: FastifyInstance) {
         request.log.error({ err: erro }, 'chat sem GEMINI_API_KEY configurada');
         return reply
           .status(503)
-          .send({ error: 'O assistente ainda não está configurado neste servidor.' });
+          .send({ error: t.assistenteNaoConfigurado });
       }
 
       // Cota do nível gratuito estourada (são 5 requisições por minuto). Não é defeito,
@@ -94,7 +96,7 @@ export async function chatRoutes(app: FastifyInstance) {
         request.log.warn({ err: erro }, 'cota do Gemini esgotada');
         return reply
           .status(429)
-          .send({ error: 'Muita gente perguntando agora. Tente de novo em alguns segundos.' });
+          .send({ error: t.cotaEsgotada });
       }
 
       // Falha da API externa (fora do ar, chave inválida, modelo aposentado). O motivo
@@ -102,7 +104,7 @@ export async function chatRoutes(app: FastifyInstance) {
       request.log.error({ err: erro }, 'falha ao falar com a API do assistente');
       return reply
         .status(502)
-        .send({ error: 'O assistente não respondeu agora. Tente de novo em instantes.' });
+        .send({ error: t.assistenteSemResposta });
     }
   });
 }

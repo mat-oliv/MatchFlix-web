@@ -4,6 +4,7 @@ import { nanoid } from 'nanoid';
 import { prisma } from '../lib/prisma.js';
 import { enriquecerFilmes } from '../lib/tmdb.js';
 import { exigirAutenticacao } from '../lib/auth.js';
+import { idiomaDaRequisicao, textos } from '../lib/idioma.js';
 
 export async function groupRoutes(app: FastifyInstance) {
   // Criar grupo — quem cria já entra como primeiro membro
@@ -30,7 +31,7 @@ export async function groupRoutes(app: FastifyInstance) {
     const userId = request.userId;
 
     const group = await prisma.group.findUnique({ where: { inviteCode } });
-    if (!group) return reply.status(404).send({ error: 'Código de convite não encontrado' });
+    if (!group) return reply.status(404).send({ error: textos(request).conviteNaoEncontrado });
 
     await prisma.groupMember.upsert({
       where: { groupId_userId: { groupId: group.id, userId } },
@@ -68,7 +69,7 @@ export async function groupRoutes(app: FastifyInstance) {
         inviteCode: group.inviteCode,
         memberCount: group._count.members,
         matchCount: group._count.matches,
-        matches: await enriquecerFilmes(group.matches),
+        matches: await enriquecerFilmes(group.matches, idiomaDaRequisicao(request)),
       }))
     );
 
@@ -83,13 +84,13 @@ export async function groupRoutes(app: FastifyInstance) {
     const membro = await prisma.groupMember.findUnique({
       where: { groupId_userId: { groupId: id, userId: request.userId } },
     });
-    if (!membro) return reply.status(403).send({ error: 'Você não faz parte deste grupo.' });
+    if (!membro) return reply.status(403).send({ error: textos(request).foraDoGrupo });
 
     const matches = await prisma.match.findMany({
       where: { groupId: id },
       orderBy: { createdAt: 'desc' },
     });
 
-    return reply.send(await enriquecerFilmes(matches));
+    return reply.send(await enriquecerFilmes(matches, idiomaDaRequisicao(request)));
   });
 }

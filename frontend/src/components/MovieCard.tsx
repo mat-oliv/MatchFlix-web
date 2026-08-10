@@ -1,4 +1,5 @@
 import type { Movie } from '../lib/api';
+import { txt } from '../lib/idioma';
 
 type Props = {
   movie: Movie;
@@ -19,7 +20,7 @@ export function MovieCard({ movie, onLike, onDislike, onAbrirDetalhes }: Props) 
         type="button"
         onClick={onAbrirDetalhes}
         aria-haspopup="dialog"
-        aria-label={`Ver descrição completa de ${movie.title}`}
+        aria-label={txt.verDescricaoDe(movie.title)}
         className="group flex-1 min-h-0 flex flex-col text-left"
       >
         {/* Sem aspect-ratio fixo: o pôster ocupa a altura que sobra, pra tela nunca rolar. */}
@@ -32,7 +33,7 @@ export function MovieCard({ movie, onLike, onDislike, onAbrirDetalhes }: Props) 
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-white/40">
-              Sem pôster
+              {txt.semPoster}
             </div>
           )}
         </div>
@@ -41,7 +42,7 @@ export function MovieCard({ movie, onLike, onDislike, onAbrirDetalhes }: Props) 
           <h2 className="font-display text-lg leading-tight mb-1">{movie.title}</h2>
           <p className="text-sm text-white/60 line-clamp-2">{movie.overview}</p>
           <p className="text-xs text-accent2/70 mt-1 group-hover:text-accent2 transition">
-            Toque para ver a descrição completa
+            {txt.toqueParaDescricao}
           </p>
         </div>
       </button>
@@ -51,13 +52,13 @@ export function MovieCard({ movie, onLike, onDislike, onAbrirDetalhes }: Props) 
           onClick={onDislike}
           className="flex-1 py-2.5 rounded-full bg-white/5 border border-rose-400/40 text-rose-300 font-medium hover:bg-rose-400/10 transition"
         >
-          Passar
+          {txt.passar}
         </button>
         <button
           onClick={onLike}
           className="flex-1 py-2.5 rounded-full bg-accent2 text-ink font-semibold hover:brightness-110 transition"
         >
-          Curtir
+          {txt.curtir}
         </button>
       </div>
     </div>

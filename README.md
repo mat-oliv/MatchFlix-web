@@ -23,6 +23,8 @@
 - [Sem Docker](#sem-docker)
 - [Scripts](#scripts)
 - [Deploy na Vercel](#deploy-na-vercel)
+- [Idioma](#idioma)
+- [Chat de dúvidas](#chat-de-dúvidas)
 - [Decisões de arquitetura](#decisões-de-arquitetura)
 
 ---
@@ -37,11 +39,12 @@ grupo e registra o match assim que todos os membros curtiram o mesmo título.
 **Funcionalidades**
 
 - Cadastro e login com usuário e senha (sessão de 7 dias)
-- Feed de filmes da TMDB, em português, sem repetir o que você já votou
+- Feed de filmes da TMDB, no idioma do navegador, sem repetir o que você já votou
 - Toque no card para ver a **descrição completa**, ano e nota
 - Grupos com código de convite para compartilhar
 - Match automático no momento do scroll, com aviso na tela
 - Menu do usuário com contadores e a lista de filmes curtidos (carregada de 20 em 20)
+- **Interface em português ou inglês**, escolhida pelo idioma do navegador
 - Chat de dúvidas sobre o app, no canto inferior esquerdo, respondido por um assistente
   (Gemini 3.5 Flash). Opcional: sem `GEMINI_API_KEY` o resto do app funciona igual
 
@@ -302,6 +305,27 @@ existem em produção; para criá-las, rode `npm run seed` apontando para o banc
 > No plano Hobby a função tem limite de 10s por requisição. A rota do feed pode buscar
 > várias páginas na TMDB em sequência — se ela chegar perto do limite, reduza
 > `MAX_PAGINAS_POR_REQUISICAO` em `backend/src/routes/movies.ts`.
+
+## Idioma
+
+A interface sai em **português** para quem tem o navegador em `pt-BR`, e em **inglês**
+para todo o resto — inglês é o padrão do site. `pt` sem região e `pt-PT` recebem inglês
+de propósito: a regra é sobre estar no Brasil, e nenhum dos dois afirma isso.
+
+Não há seletor de idioma: vale o do navegador, decidido uma vez quando o app carrega.
+
+O idioma vale para o app inteiro, não só para os rótulos de tela:
+
+| O que | Como muda |
+| --- | --- |
+| Textos da interface | `frontend/src/lib/idioma.ts` |
+| Mensagens de erro da API | `backend/src/lib/idioma.ts`, escolhidas pelo `Accept-Language` |
+| Título e sinopse dos filmes | TMDB consultada em `pt-BR` ou `en-US` |
+| Respostas do assistente | instrução de idioma acrescentada ao prompt |
+
+Nos dois dicionários o inglês é declarado como `const en: typeof pt`, então **esquecer
+uma tradução é erro de compilação**, não uma frase em português no meio da tela em
+inglês.
 
 ## Chat de dúvidas
 

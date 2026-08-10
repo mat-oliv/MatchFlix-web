@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import type { Movie } from '../lib/api';
+import { txt } from '../lib/idioma';
 
 type Props = {
   movie: Movie;
@@ -22,7 +23,7 @@ export function DetalhesFilme({ movie, onFechar }: Props) {
       className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center px-4 py-8"
       role="dialog"
       aria-modal="true"
-      aria-label={`Detalhes de ${movie.title}`}
+      aria-label={txt.detalhesDe(movie.title)}
       onClick={onFechar}
     >
       <div
@@ -50,7 +51,7 @@ export function DetalhesFilme({ movie, onFechar }: Props) {
           <button
             autoFocus
             onClick={onFechar}
-            aria-label="Fechar"
+            aria-label={txt.fechar}
             className="shrink-0 w-8 h-8 rounded-full text-white/50 hover:text-white hover:bg-white/10 transition"
           >
             ✕
@@ -60,7 +61,7 @@ export function DetalhesFilme({ movie, onFechar }: Props) {
         {/* A sinopse é o único trecho que pode crescer: rola aqui dentro, não na tela. */}
         <div className="p-5 overflow-y-auto">
           <p className="text-sm text-white/80 leading-relaxed whitespace-pre-line">
-            {movie.overview?.trim() || 'Este filme ainda não tem descrição em português.'}
+            {movie.overview?.trim() || txt.semDescricao}
           </p>
         </div>
       </div>
