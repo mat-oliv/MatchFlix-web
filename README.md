@@ -40,7 +40,7 @@ grupo e registra o match assim que todos os membros curtiram o mesmo título.
 **Funcionalidades**
 
 - Cadastro e login com usuário e senha (sessão de 7 dias)
-- Feed de filmes da TMDB, no idioma do navegador, sem repetir o que você já votou
+- Feed de filmes da TMDB, no idioma do navegador, sem repetir o que você já curtiu
 - Toque no card para ver a **descrição completa**, ano e nota
 - Grupos com código de convite para compartilhar
 - Match automático no momento do scroll, com aviso na tela
@@ -52,8 +52,8 @@ grupo e registra o match assim que todos os membros curtiram o mesmo título.
 
 ## Como funciona
 
-O scroll é **global por usuário** — você vota em um filme uma única vez, mesmo estando
-em vários grupos. O match é calculado por grupo, no momento do like:
+O scroll é **global por usuário** — seu voto vale para todos os seus grupos ao mesmo
+tempo, não é por grupo. O match é calculado por grupo, no momento do like:
 
 ```mermaid
 flowchart TD
@@ -307,6 +307,19 @@ existem em produção; para criá-las, rode `npm run seed` apontando para o banc
 > No plano Hobby a função tem limite de 10s por requisição. A rota do feed pode buscar
 > várias páginas na TMDB em sequência — se ela chegar perto do limite, reduza
 > `MAX_PAGINAS_POR_REQUISICAO` em `backend/src/routes/movies.ts`.
+
+## O que volta ao feed
+
+**Curtir tira o filme do feed para sempre. Passar não.** Passar é "hoje não", e o filme
+pode reaparecer outro dia — o catálogo da TMDB é grande, mas não infinito, e descartar
+para sempre tudo que a pessoa passou esvazia o feed de quem usa bastante.
+
+Consequência disso no registro do voto: como um filme passado pode voltar e ser curtido
+depois, `POST /swipes` **repõe o `createdAt`** a cada voto. Naquela tabela o campo
+significa "quando o voto atual foi registrado", não quando a linha nasceu — o nome é
+herança do `@default(now())`. Sem repor, um like dado hoje num filme passado meses atrás
+ficaria fora do ranking da semana e apareceria no meio da lista de curtidos, com a data
+antiga, em vez de no topo.
 
 ## Ranking da semana
 
