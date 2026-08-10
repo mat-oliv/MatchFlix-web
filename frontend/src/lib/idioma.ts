@@ -89,6 +89,14 @@ const pt = {
   copiar: 'Copiar',
   nenhumMatch: 'Nenhum match ainda. Curtam filmes na aba Filmes!',
 
+  // ranking
+  abaRanking: 'Ranking',
+  rankingTitulo: 'Mais curtidos da semana',
+  rankingSubtitulo: (dias: number) => `Todos os likes do app nos últimos ${dias} dias`,
+  rankingVazio: 'Ninguém curtiu nada nos últimos dias. Seja o primeiro na aba Filmes!',
+  rankingErro: 'Não foi possível carregar o ranking.',
+  curtidas: (n: number): string => (n === 1 ? 'curtida' : 'curtidas'),
+
   // menu do usuário
   menuUsuario: 'Menu do usuário',
   escolherFoto: 'Escolher foto de perfil',
@@ -202,6 +210,14 @@ const en: typeof pt = {
   copiado: 'Copied!',
   copiar: 'Copy',
   nenhumMatch: 'No matches yet. Like some movies in the Movies tab!',
+
+  // ranking
+  abaRanking: 'Top',
+  rankingTitulo: 'Most liked this week',
+  rankingSubtitulo: (dias: number) => `Every like in the app over the last ${dias} days`,
+  rankingVazio: 'Nobody liked anything in the last few days. Be the first, in the Movies tab!',
+  rankingErro: 'Could not load the leaderboard.',
+  curtidas: (n: number): string => (n === 1 ? 'like' : 'likes'),
 
   // menu do usuário
   menuUsuario: 'User menu',

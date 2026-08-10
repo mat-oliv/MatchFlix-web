@@ -57,6 +57,13 @@ model Swipe {
   user User @relation(fields: [userId], references: [id])
 
   @@unique([userId, movieId])
+  // Serve só ao ranking da semana: `liked = true AND createdAt >= X GROUP BY movieId`.
+  // A ordem das colunas é o que importa — com `liked` na frente e `createdAt` em
+  // seguida, o filtro vira uma faixa contígua do índice em vez de varredura da tabela.
+  // `movieId` entra no fim não para filtrar, mas para o Postgres conseguir agrupar sem
+  // ir buscar a linha no disco (index-only scan). São 4 bytes por linha a mais num
+  // índice que já existiria de qualquer jeito.
+  @@index([liked, createdAt, movieId])
 }
 
 model Match {

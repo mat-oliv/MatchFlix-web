@@ -78,6 +78,19 @@ export function getMovieFeed(page?: number): Promise<{ movies: Movie[]; nextPage
   return pedir(`/movies/feed${page ? `?page=${page}` : ''}`);
 }
 
+/** Filme no ranking da semana — `likeCount` é quantas pessoas curtiram na janela. */
+export type FilmeDoRanking = {
+  movieId: number;
+  title: string;
+  posterUrl: string | null;
+  likeCount: number;
+};
+
+/** Ranking global dos mais curtidos. O backend guarda o resultado pronto por alguns minutos. */
+export function getRanking(): Promise<{ movies: FilmeDoRanking[]; days: number }> {
+  return pedir('/movies/leaderboard');
+}
+
 export function sendSwipe(
   movieId: number,
   liked: boolean
