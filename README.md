@@ -207,12 +207,15 @@ Crie um projeto em [neon.tech](https://neon.tech) e guarde as **duas** strings d
 
 Migration através do pgbouncer falha; é por isso que são duas.
 
-Aplique o schema uma vez, do seu computador:
+O schema é aplicado **pelo próprio build da Vercel**: o `buildCommand` em
+`backend/vercel.json` roda `prisma migrate deploy` antes de compilar, então toda
+migration pendente sobe junto com o deploy e uma migration quebrada reprova o build, sem
+promover código cujo schema não foi aplicado.
 
-```bash
-cd backend
-DATABASE_URL="<pooled>" DIRECT_URL="<direta>" npx prisma migrate deploy
-```
+> Não tente aplicar do seu computador: `DATABASE_URL` e `DIRECT_URL` estão marcadas como
+> *sensitive* no painel, e `vercel env pull` devolve a string literal `[SENSITIVE]` no
+> lugar do valor — `prisma migrate deploy` falha com `P1013: The provided database string
+> is invalid`. Quem tem os valores reais é o build.
 
 ### 2. Projeto da API
 
@@ -417,8 +420,8 @@ produção.
 
 O `@@index([groupId, createdAt])` no `Match` existe para esta consulta — com `groupId` na
 frente, cada grupo vira uma faixa contígua já ordenada por data, e o corte por `since` é
-o fim da faixa em vez de um filtro linha a linha. **A migration precisa ser aplicada na
-Neon** (`npx prisma migrate deploy`) antes do deploy.
+o fim da faixa em vez de um filtro linha a linha. A migration sobe junto com o deploy —
+o build da Vercel roda `prisma migrate deploy` antes de compilar.
 
 ## Duas contas no mesmo navegador
 
