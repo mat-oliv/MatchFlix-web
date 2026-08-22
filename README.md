@@ -23,6 +23,8 @@
 - [Sem Docker](#sem-docker)
 - [Scripts](#scripts)
 - [Deploy na Vercel](#deploy-na-vercel)
+- [Filme adulto não entra no feed](#filme-adulto-não-entra-no-feed)
+- [O que volta ao feed](#o-que-volta-ao-feed)
 - [Ranking da semana](#ranking-da-semana)
 - [Idioma](#idioma)
 - [Chat de dúvidas](#chat-de-dúvidas)
@@ -41,6 +43,7 @@ grupo e registra o match assim que todos os membros curtiram o mesmo título.
 
 - Cadastro e login com usuário e senha (sessão de 7 dias)
 - Feed de filmes da TMDB, no idioma do navegador, sem repetir o que você já curtiu
+- **Sem filme adulto**: só entram os classificados até 16 anos pela DJCTQ
 - Toque no card para ver a **descrição completa**, ano e nota
 - Grupos com código de convite para compartilhar
 - Match automático no momento do scroll, com aviso na tela
@@ -307,6 +310,65 @@ existem em produção; para criá-las, rode `npm run seed` apontando para o banc
 > No plano Hobby a função tem limite de 10s por requisição. A rota do feed pode buscar
 > várias páginas na TMDB em sequência — se ela chegar perto do limite, reduza
 > `MAX_PAGINAS_POR_REQUISICAO` em `backend/src/routes/movies.ts`.
+
+## Filme adulto não entra no feed
+
+O feed só traz filmes com **classificação indicativa até 16 anos** (DJCTQ). São três
+travas em sequência, em `backend/src/lib/tmdb.ts`:
+
+| Trava | O que corta | Custo |
+| --- | --- | --- |
+| `include_adult=false` no `/discover` | O que a TMDB marca como pornografia (`adult: true`) | nenhum |
+| `certification.lte=16` no `/discover` | A maior parte da faixa 18 anos | nenhum |
+| `ehAdulto()`, uma consulta por filme | O que escapa da anterior | ver abaixo |
+
+**A trava do campo `adult` não resolve nada sozinha.** Medindo 160 filmes de
+`/movie/popular`, **nenhum** vinha com `adult: true` — a TMDB já mantém esse material
+fora dessas listas —, mas **8% eram 18 anos**. Um filtro escrito só em cima daquele campo
+pareceria funcionar e não faria nada.
+
+**E o filtro do `/discover` sozinho vaza.** Um filme pode ter mais de uma classificação
+brasileira, uma por tipo de lançamento, e o `certification.lte` aceita o filme se
+*qualquer uma* couber no teto. "Frankenstein" (2025) saiu **18 no cinema e 16 na
+Netflix**: passou pelo filtro e chegou ao feed num teste de 120 filmes. Por isso existe a
+terceira trava, que lê os lançamentos um a um e aplica a regra inversa — **basta uma
+classificação 18 para barrar**.
+
+Foi por causa da segunda trava que o feed deixou de usar `/movie/popular`: aquele
+endpoint não aceita filtro de classificação. O `/discover` ordenado por popularidade
+devolve o mesmo tipo de lista.
+
+### O preço
+
+A terceira trava é uma requisição à TMDB por filme, então o resultado fica em memória por
+`id` — a classificação não muda com o idioma, então um cache só serve aos dois. Medido na
+rota `/movies/feed`, uma página de 20 filmes:
+
+| | Latência |
+| --- | --- |
+| Primeira chamada (cache vazio) | 1988 ms |
+| Chamadas seguintes | 209 ms |
+
+> **Atenção no plano Hobby da Vercel**, onde a função tem 10s por requisição: a rota
+> busca até `MAX_PAGINAS_POR_REQUISICAO` páginas em sequência enquanto não juntar filmes
+> novos o bastante, e cada página ainda não cacheada custa cerca de 2s. Cinco páginas
+> frias chegam perto do teto. Se aparecer timeout, baixe essa constante em
+> `backend/src/routes/movies.ts`.
+
+A classificação usada é sempre a **brasileira**, mesmo com o site em inglês: a regra é
+sobre o conteúdo do filme, não sobre o idioma de quem assiste, e um padrão único mantém
+o catálogo igual para todo mundo — dois membros do mesmo grupo podem estar com
+navegadores em idiomas diferentes e precisam continuar podendo dar match no mesmo filme.
+
+**Filme sem classificação brasileira também fica de fora** — cerca de 28% dos populares,
+quase sempre lançamento ainda não classificado. É de propósito: na dúvida sobre a faixa
+etária, não mostrar. O preço é um blockbuster recém-anunciado demorar a aparecer.
+
+> Duas folgas conhecidas, ambas deliberadas. Se a consulta da terceira trava falhar, o
+> filme **fica** — o `/discover` já filtrou, e esvaziar o feed numa instabilidade da TMDB
+> é pior que o pouco que ele deixa passar. E o ranking da semana conta os likes que já
+> estão no banco, então um filme 18 curtido **antes** desta mudança ainda pode aparecer
+> lá; como ele não volta ao feed, ninguém curte de novo e ele sai sozinho em sete dias.
 
 ## O que volta ao feed
 
