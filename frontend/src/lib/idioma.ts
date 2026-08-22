@@ -51,6 +51,7 @@ const pt = {
   carregandoFilmes: 'Carregando filmes...',
   deuMatch: 'Deu match! 🎬',
   todosCurtiram: (titulo: string) => `Todo mundo do grupo curtiu "${titulo}"`,
+  noGrupo: (nome: string) => `no grupo "${nome}"`,
   toqueParaContinuar: 'Toque em qualquer lugar para continuar',
 
   // card
@@ -173,6 +174,7 @@ const en: typeof pt = {
   carregandoFilmes: 'Loading movies...',
   deuMatch: "It's a match! 🎬",
   todosCurtiram: (titulo: string) => `Everyone in the group liked "${titulo}"`,
+  noGrupo: (nome: string) => `in the group "${nome}"`,
   toqueParaContinuar: 'Tap anywhere to continue',
 
   // card

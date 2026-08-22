@@ -26,16 +26,19 @@ export async function swipeRoutes(app: FastifyInstance) {
       create: { userId, movieId, liked },
     });
 
-    const newMatches: { groupId: string; movieId: number }[] = [];
+    // O nome do grupo vai junto para o aviso de match ser idêntico ao que chega pelo
+    // `/me/matches` — quem votou por último recebe daqui, quem votou antes recebe de lá,
+    // e a tela não precisa saber de qual dos dois veio.
+    const newMatches: { groupId: string; groupName: string; movieId: number }[] = [];
 
     if (liked) {
       // Swipe é global por usuário — o match é calculado por grupo
       const memberships = await prisma.groupMember.findMany({
         where: { userId },
-        select: { groupId: true },
+        select: { groupId: true, group: { select: { name: true } } },
       });
 
-      for (const { groupId } of memberships) {
+      for (const { groupId, group } of memberships) {
         const members = await prisma.groupMember.findMany({
           where: { groupId },
           select: { userId: true },
@@ -66,7 +69,11 @@ export async function swipeRoutes(app: FastifyInstance) {
             update: {},
             create: { groupId, movieId },
           });
-          newMatches.push({ groupId: match.groupId, movieId: match.movieId });
+          newMatches.push({
+            groupId: match.groupId,
+            groupName: group.name,
+            movieId: match.movieId,
+          });
         }
       }
     }
