@@ -6,7 +6,16 @@ function mensagemDoErro(err: unknown, padrao: string) {
   return err instanceof ApiError ? err.message : padrao;
 }
 
-export function Groups() {
+type Props = {
+  /**
+   * Sobe a cada match novo detectado pelo `useMatchesAoVivo`. Serve só de gatilho: a
+   * contagem e a fileira de pôsteres se refazem sem a pessoa precisar sair da aba e
+   * voltar, que era a única forma de ver um match fechado por outro membro.
+   */
+  sinalDeAtualizacao: number;
+};
+
+export function Groups({ sinalDeAtualizacao }: Props) {
   const [groupName, setGroupName] = useState('');
   const [inviteCode, setInviteCode] = useState('');
   const [message, setMessage] = useState('');
@@ -28,7 +37,7 @@ export function Groups() {
 
   useEffect(() => {
     carregarGrupos();
-  }, [carregarGrupos]);
+  }, [carregarGrupos, sinalDeAtualizacao]);
 
   async function handleCreate() {
     if (!groupName.trim()) return;

@@ -3,11 +3,20 @@ import { getMovieFeed, sendSwipe, type Movie } from '../lib/api';
 import { MovieCard } from '../components/MovieCard';
 import { DetalhesFilme } from '../components/DetalhesFilme';
 import { txt } from '../lib/idioma';
+import type { AvisoDeMatch } from '../lib/useMatchesAoVivo';
 
-export function SwipeScreen() {
+type Props = {
+  /**
+   * Entrega o match que o próprio voto acabou de fechar. Quem exibe é o `App`, porque o
+   * mesmo aviso também chega pelo `useMatchesAoVivo` quando quem fecha o match é outra
+   * pessoa do grupo — e o pop-up tem de ser um só, com uma peneira de repetidos só.
+   */
+  onMatches: (matches: AvisoDeMatch[]) => void;
+};
+
+export function SwipeScreen({ onMatches }: Props) {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [index, setIndex] = useState(0);
-  const [matchMovie, setMatchMovie] = useState<Movie | null>(null);
   // Guarda o filme inteiro, não um booleano: assim o pop-up mostra o que foi aberto
   // mesmo que o card debaixo mude.
   const [detalhes, setDetalhes] = useState<Movie | null>(null);
@@ -63,7 +72,17 @@ export function SwipeScreen() {
 
     try {
       const { newMatches } = await sendSwipe(votado.id, liked);
-      if (newMatches.length > 0) setMatchMovie(votado);
+      // O backend devolve o grupo; o título e o pôster vêm do card que acabou de sair
+      // da tela, que já os tem — não precisa consultar a TMDB de novo por isso.
+      onMatches(
+        newMatches.map((m) => ({
+          groupId: m.groupId,
+          groupName: m.groupName,
+          movieId: votado.id,
+          title: votado.title,
+          posterUrl: votado.posterUrl,
+        }))
+      );
     } catch {
       setError(txt.erroVoto(votado.title));
     }
@@ -99,19 +118,6 @@ export function SwipeScreen() {
       )}
 
       {detalhes && <DetalhesFilme movie={detalhes} onFechar={() => setDetalhes(null)} />}
-
-      {matchMovie && (
-        <div
-          className="fixed inset-0 bg-black/80 flex items-center justify-center z-50"
-          onClick={() => setMatchMovie(null)}
-        >
-          <div className="text-center px-6">
-            <p className="font-display text-4xl text-amber-300 mb-2">{txt.deuMatch}</p>
-            <p className="text-white/80">{txt.todosCurtiram(matchMovie.title)}</p>
-            <p className="text-white/40 text-sm mt-4">{txt.toqueParaContinuar}</p>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

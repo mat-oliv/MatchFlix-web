@@ -47,7 +47,11 @@ COMO FUNCIONA
 - Aba "Grupos": criar um grupo, que gera um código de convite para compartilhar, ou
   entrar num grupo existente digitando o código.
 - Match: acontece no momento em que alguém curte um filme, se TODOS os membros daquele
-  grupo já curtiram o mesmo filme. Aparece um aviso na tela na hora.
+  grupo já curtiram o mesmo filme. O aviso aparece na tela de TODO MUNDO do grupo em
+  poucos segundos, mesmo de quem já tinha curtido antes e não está votando naquela hora.
+  Não precisa recarregar a página, e a aba Grupos se atualiza sozinha.
+- Dá para usar duas contas ao mesmo tempo no mesmo navegador, uma por aba. Cada aba
+  mantém a sua; entrar numa não derruba a outra.
 - Um grupo precisa de pelo menos 2 pessoas para dar match. Sozinho nunca dá match.
 - Um match, uma vez criado, nunca é desfeito. Ele registra um acordo daquele momento;
   entrar no grupo depois não apaga matches antigos.

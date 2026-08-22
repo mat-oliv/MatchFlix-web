@@ -94,7 +94,7 @@ export function getRanking(): Promise<{ movies: FilmeDoRanking[]; days: number }
 export function sendSwipe(
   movieId: number,
   liked: boolean
-): Promise<{ newMatches: { groupId: string; movieId: number }[] }> {
+): Promise<{ newMatches: { groupId: string; groupName: string; movieId: number }[] }> {
   return pedir('/swipes', {
     method: 'POST',
     body: JSON.stringify({ movieId, liked }),
@@ -149,6 +149,29 @@ export function getFilmesCurtidos(
   cursor?: string
 ): Promise<{ movies: FilmeResumo[]; nextCursor: string | null }> {
   return pedir(`/me/liked${cursor ? `?cursor=${encodeURIComponent(cursor)}` : ''}`);
+}
+
+/** Match recém-criado num grupo de quem pergunta. */
+export type MatchRecente = {
+  groupId: string;
+  groupName: string;
+  movieId: number;
+  title: string;
+  posterUrl: string | null;
+  createdAt: string;
+};
+
+/**
+ * Matches criados depois de `since`, para o app avisar quem NÃO deu o último like.
+ *
+ * Sem `since` devolve lista vazia e só o `now` do servidor — é o marco que deve voltar
+ * na chamada seguinte. Quem manda no tempo é o servidor de propósito: com o relógio do
+ * navegador, um adiantado pularia matches e um atrasado repetiria os mesmos.
+ */
+export function getMatchesRecentes(
+  since?: string
+): Promise<{ matches: MatchRecente[]; now: string }> {
+  return pedir(`/me/matches${since ? `?since=${encodeURIComponent(since)}` : ''}`);
 }
 
 export function getMeusGrupos(): Promise<UserGroup[]> {

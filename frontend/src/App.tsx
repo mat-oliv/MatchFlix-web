@@ -5,6 +5,8 @@ import { Ranking } from './pages/Ranking';
 import { Auth } from './pages/Auth';
 import { MenuUsuario } from './components/MenuUsuario';
 import { ChatDuvidas } from './components/ChatDuvidas';
+import { AvisoDeMatch } from './components/AvisoDeMatch';
+import { useMatchesAoVivo } from './lib/useMatchesAoVivo';
 import { txt } from './lib/idioma';
 import { getMeuPerfil } from './lib/api';
 import { lerSessao, limparSessao, type Sessao } from './lib/session';
@@ -15,6 +17,10 @@ export default function App() {
   const [menuAberto, setMenuAberto] = useState(false);
   const [chatAberto, setChatAberto] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+
+  // Precisa ficar aqui em cima, e não na aba Filmes: quem curtiu primeiro só descobre o
+  // match quando o outro membro vota, e nesse momento pode estar em qualquer aba.
+  const { aviso, dispensar, anunciar, versao } = useMatchesAoVivo(sessao?.user.id ?? null);
 
   // A miniatura do cabeçalho é a mesma foto do menu, mas o cabeçalho aparece antes de
   // o menu ser aberto alguma vez — por isso o App busca o perfil por conta própria.
@@ -94,12 +100,14 @@ export default function App() {
 
       {/* Filmes cabe na tela; Grupos é lista e rola por conta própria. */}
       <main className={`flex-1 min-h-0 px-4 ${tab === 'swipe' ? '' : 'overflow-y-auto'}`}>
-        {tab === 'swipe' && <SwipeScreen />}
-        {tab === 'groups' && <Groups />}
+        {tab === 'swipe' && <SwipeScreen onMatches={anunciar} />}
+        {tab === 'groups' && <Groups sinalDeAtualizacao={versao} />}
         {/* Monta só quando aberta: a busca do ranking mora no efeito do componente,
             então quem nunca entra aqui nunca dispara a requisição. */}
         {tab === 'ranking' && <Ranking />}
       </main>
+
+      {aviso && <AvisoDeMatch match={aviso} onFechar={dispensar} />}
 
       {menuAberto && (
         <MenuUsuario

@@ -75,4 +75,11 @@ model Match {
   group Group @relation(fields: [groupId], references: [id])
 
   @@unique([groupId, movieId])
+  // Serve à consulta do `/me/matches`, que roda de poucos em poucos segundos para cada
+  // pessoa com o app aberto: `groupId IN (...) AND createdAt > X`. Com `groupId` na
+  // frente, cada grupo vira uma faixa contígua do índice já ordenada por `createdAt`,
+  // então o corte por data é o fim da faixa em vez de um filtro linha a linha. O
+  // `@@unique` acima não serve aqui: ele é por (groupId, movieId), e não ajuda a cortar
+  // por data.
+  @@index([groupId, createdAt])
 }
