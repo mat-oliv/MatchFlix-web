@@ -12,3 +12,5 @@ CLAUDE.md
 .vercel/
 .env.local
 .env.*.local
+.vercel
+.env*
