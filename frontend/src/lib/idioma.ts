@@ -47,7 +47,6 @@ const pt = {
   // filmes
   erroCarregarFilmes: 'Não foi possível carregar os filmes.',
   erroVoto: (titulo: string) => `Não foi possível registrar seu voto em "${titulo}".`,
-  fimDoFeed: 'Você já votou em tudo por aqui! Volte mais tarde para novidades.',
   carregandoFilmes: 'Carregando filmes...',
   deuMatch: 'Deu match! 🎬',
   todosCurtiram: (titulo: string) => `Todo mundo do grupo curtiu "${titulo}"`,
@@ -170,7 +169,6 @@ const en: typeof pt = {
   // filmes
   erroCarregarFilmes: 'Could not load the movies.',
   erroVoto: (titulo: string) => `Could not save your vote on "${titulo}".`,
-  fimDoFeed: "You've voted on everything here! Come back later for more.",
   carregandoFilmes: 'Loading movies...',
   deuMatch: "It's a match! 🎬",
   todosCurtiram: (titulo: string) => `Everyone in the group liked "${titulo}"`,

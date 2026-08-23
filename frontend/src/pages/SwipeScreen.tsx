@@ -5,6 +5,18 @@ import { DetalhesFilme } from '../components/DetalhesFilme';
 import { txt } from '../lib/idioma';
 import type { AvisoDeMatch } from '../lib/useMatchesAoVivo';
 
+/**
+ * Quantas requisições seguidas sem filme novo antes de esperar um pouco.
+ *
+ * Cada uma varre até cinco páginas no servidor, então são até 200 filmes examinados por
+ * rodada. Chegar ao fim disso significa que a pessoa já votou em tudo por uma faixa
+ * enorme do catálogo — raro o bastante para valer uma pausa em vez de insistir sem parar.
+ */
+const MAX_VARREDURAS = 4;
+
+/** Pausa antes de varrer de novo, quando nem isso achou filme. */
+const ESPERA_NOVA_VARREDURA_MS = 3000;
+
 type Props = {
   /**
    * Entrega o match que o próprio voto acabou de fechar. Quem exibe é o `App`, porque o
@@ -21,38 +33,49 @@ export function SwipeScreen({ onMatches }: Props) {
   // mesmo que o card debaixo mude.
   const [detalhes, setDetalhes] = useState<Movie | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [fimDoFeed, setFimDoFeed] = useState(false);
 
   // Cursor devolvido pelo backend. Fica em ref porque não afeta a renderização e
   // não pode disparar novo efeito.
   const proximaPagina = useRef<number | undefined>(undefined);
   const buscando = useRef(false);
+  // Retentativa agendada quando uma varredura inteira volta vazia; limpa ao desmontar.
+  const reagendar = useRef<number | undefined>(undefined);
 
   const carregarMais = useCallback(async () => {
     if (buscando.current) return;
     buscando.current = true;
 
     try {
-      const data = await getMovieFeed(proximaPagina.current);
-      proximaPagina.current = data.nextPage;
+      // Resposta vazia NÃO é fim de feed: quer dizer que as páginas varridas nesta
+      // requisição eram só de filmes já votados. O servidor avançou o `nextPage`, então
+      // insistir continua a varredura de onde ela parou, em vez de parar a tela.
+      for (let tentativa = 0; tentativa < MAX_VARREDURAS; tentativa++) {
+        const data = await getMovieFeed(proximaPagina.current);
+        proximaPagina.current = data.nextPage;
 
-      if (data.movies.length === 0) {
-        setFimDoFeed(true);
-        return;
+        if (data.movies.length > 0) {
+          // O backend já exclui o que foi votado, mas páginas podem se sobrepor entre
+          // requisições — filtra o que já está na lista pra não repetir card.
+          setMovies((prev) => {
+            const conhecidos = new Set(prev.map((m) => m.id));
+            return [...prev, ...data.movies.filter((m) => !conhecidos.has(m.id))];
+          });
+          return;
+        }
       }
 
-      // O backend já exclui o que foi votado, mas páginas podem se sobrepor entre
-      // requisições — filtra o que já está na lista pra não repetir card.
-      setMovies((prev) => {
-        const conhecidos = new Set(prev.map((m) => m.id));
-        return [...prev, ...data.movies.filter((m) => !conhecidos.has(m.id))];
-      });
+      // Varreu o teto e não achou nada. Em vez de anunciar fim de catálogo — que seria
+      // quase sempre mentira, já que são 10 mil filmes alcançáveis —, tenta de novo
+      // daqui a pouco. A tela segue no estado de carregamento.
+      reagendar.current = window.setTimeout(carregarMais, ESPERA_NOVA_VARREDURA_MS);
     } catch {
       setError(txt.erroCarregarFilmes);
     } finally {
       buscando.current = false;
     }
   }, []);
+
+  useEffect(() => () => window.clearTimeout(reagendar.current), []);
 
   useEffect(() => {
     carregarMais();
@@ -91,11 +114,7 @@ export function SwipeScreen({ onMatches }: Props) {
   if (!current) {
     return (
       <div className="h-full flex items-center justify-center">
-        <p className="text-center text-white/60 px-6">
-          {fimDoFeed
-            ? txt.fimDoFeed
-            : txt.carregandoFilmes}
-        </p>
+        <p className="text-center text-white/60 px-6">{txt.carregandoFilmes}</p>
       </div>
     );
   }
