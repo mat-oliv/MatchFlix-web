@@ -165,6 +165,7 @@ npm run dev              # http://localhost:5173
 | `npm run build`          | Compila TypeScript para `dist/`                    |
 | `npm run typecheck`      | Checa tipos sem gerar arquivos                     |
 | `npm run verify:vercel`  | Roda os portões da Vercel localmente, sem deploy    |
+| `npm run verify:prod`    | Testa a produção depois do deploy (ver abaixo)     |
 | `npm run migrate:deploy` | Aplica as migrations pendentes no banco            |
 
 **frontend**
@@ -258,6 +259,28 @@ rodar os portões da Vercel na sua máquina:
 ```bash
 cd backend && npm run verify:vercel
 ```
+
+### Depois do deploy: `npm run verify:prod`
+
+Build verde não prova que funciona — já houve deploy que passou e a URL morreu no ar. O
+script `backend/scripts/verificar-producao.mjs` exercita a produção como um usuário:
+
+```bash
+cd backend
+VERIFY_USER_A=<conta-de-teste-a> VERIFY_USER_B=<conta-de-teste-b> npm run verify:prod
+```
+
+| Checa | Como |
+| --- | --- |
+| API e site no ar | `/health` devolvendo JSON (um `302` é Deployment Protection ligado) |
+| O site fala com a API certa | Lê a `VITE_API_URL` do bundle que está publicado |
+| O código novo subiu | Procura marcadores do build atual dentro do bundle |
+| Filtro de +18 | Confere cada filme do feed contra a TMDB, em lotes, não contra o nosso código |
+| Match em tempo real | Duas contas, um grupo: a que votou primeiro precisa ser avisada |
+
+> As duas contas são obrigatórias porque toda rota útil pede autenticação, e o app não
+> tem "apagar conta" — cada par novo fica no banco para sempre. Sem elas o script exige
+> `--criar-contas`, para a criação nunca ser acidental.
 
 O script compila, aplica **as mesmas regras de detecção de entrypoint da Vercel** (nomes
 aceitos, extensões e o regex do import de `fastify`, copiados de `@vercel/fastify`),
