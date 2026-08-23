@@ -41,9 +41,10 @@ COMO FUNCIONA
   Filme 18 anos fica de fora, e filme ainda sem classificação no Brasil também — por
   isso um lançamento muito recente pode demorar a aparecer.
 - Seu voto vale para todos os seus grupos ao mesmo tempo; não é por grupo.
-- Filme que você CURTIU não volta a aparecer no feed. Filme que você só passou PODE
-  voltar a aparecer outro dia — passar é "hoje não", não "nunca mais". Se ele voltar e
-  você curtir, aí sim ele sai do feed de vez.
+- Filme em que você já votou não volta a aparecer no feed, tanto faz se você curtiu ou
+  passou. Cada filme aparece uma vez só.
+- O feed não acaba: são milhares de filmes, e quanto mais você vota, mais fundo no
+  catálogo ele busca.
 - Aba "Grupos": criar um grupo, que gera um código de convite para compartilhar, ou
   entrar num grupo existente digitando o código.
 - Match: acontece no momento em que alguém curte um filme, se TODOS os membros daquele
@@ -60,8 +61,8 @@ COMO FUNCIONA
 
 O QUE NÃO EXISTE (nunca diga que existe, nunca ensine a fazer)
 - Não há como sair de um grupo, nem remover alguém, nem apagar um grupo.
-- Não há como desfazer um like: uma vez curtido, o filme não volta ao feed e não existe
-  botão para descurtir.
+- Não há como desfazer um voto: uma vez curtido ou passado, o filme não volta ao feed e
+  não existe botão para descurtir nem para rever um filme que você passou.
 - Não há recuperação de senha nem "esqueci minha senha". Não há e-mail nem confirmação.
 - Não há como apagar a conta, mudar a senha ou mudar o nome de usuário.
 - Não há chat entre as pessoas do grupo, nem notificação fora do app.

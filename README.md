@@ -25,7 +25,7 @@
 - [Deploy na Vercel](#deploy-na-vercel)
 - [Filme adulto não entra no feed](#filme-adulto-não-entra-no-feed)
 - [O feed não acaba](#o-feed-não-acaba)
-- [O que volta ao feed](#o-que-volta-ao-feed)
+- [Cada filme aparece uma vez só](#cada-filme-aparece-uma-vez-só)
 - [Match em tempo real](#match-em-tempo-real)
 - [Duas contas no mesmo navegador](#duas-contas-no-mesmo-navegador)
 - [Ranking da semana](#ranking-da-semana)
@@ -454,74 +454,22 @@ erro 500. Toda conta de página passa por `paginaValida()`, que dá a volta em v
 estourar. São 500 × 20 = **10 mil filmes** alcançáveis nesta ordenação; o catálogo
 filtrado tem ~22,8 mil, mas o resto está além do teto da API.
 
-## O que volta ao feed
+## Cada filme aparece uma vez só
 
-**Curtir tira o filme do feed para sempre. Passar não.** Passar é "hoje não", e o filme
-pode reaparecer outro dia — o catálogo da TMDB é grande, mas não infinito, e descartar
-para sempre tudo que a pessoa passou esvazia o feed de quem usa bastante.
+**Votou, sumiu do feed** — curtiu ou passou, tanto faz. O filtro em `/movies/feed` é
+`where: { userId }`, e repare que **não há `liked` nele**: essa ausência é a regra
+inteira.
 
-Consequência disso no registro do voto: como um filme passado pode voltar e ser curtido
-depois, `POST /swipes` **repõe o `createdAt`** a cada voto. Naquela tabela o campo
-significa "quando o voto atual foi registrado", não quando a linha nasceu — o nome é
-herança do `@default(now())`. Sem repor, um like dado hoje num filme passado meses atrás
-ficaria fora do ranking da semana e apareceria no meio da lista de curtidos, com a data
-antiga, em vez de no topo.
+Antes só o like tirava o filme de circulação, e passar significava "hoje não" — o filme
+voltava outro dia. Isso existia para o feed não esvaziar, e deixou de ser necessário
+quando a entrada no catálogo passou a acompanhar o uso (ver [O feed não
+acaba](#o-feed-não-acaba)). Sem aquela mudança, excluir os passados esvaziaria o feed em
+poucas centenas de votos.
 
-## Match em tempo real
-
-**O sintoma**: duas pessoas do mesmo grupo curtindo filmes, e o match não aparecia para
-uma delas. Não era o banco atrasado — o match era gravado na hora. O que faltava era
-alguém contar para a outra pessoa.
-
-O match nasce dentro do `POST /swipes`, na requisição de **quem vota por último**, e só
-essa resposta trazia `newMatches`. Quem tinha curtido antes já havia encerrado a sua
-requisição minutos atrás: a tela dela só mudava se trocasse de aba, porque a aba Grupos
-busca os dados ao montar.
-
-Agora o app pergunta de tempos em tempos por `GET /me/matches?since=<instante>`
-(`useMatchesAoVivo`, no frontend). O aviso passou da aba Filmes para o `App`, porque ele
-pode chegar com a pessoa em qualquer lugar — e a aba Grupos se refaz junto, sem precisar
-sair e voltar.
-
-| Detalhe | Por quê |
-| --- | --- |
-| Pergunta a cada 5s | Rápido o bastante para parecer instantâneo; a consulta é indexada e quase sempre volta vazia |
-| Só com a aba à vista | Aba escondida não mostraria nada; ao voltar, dispara na hora |
-| O relógio é o do **servidor** | O `now` da resposta volta na pergunta seguinte. Com o relógio do navegador, um adiantado pularia matches e um atrasado repetiria os mesmos |
-| Primeira pergunta vem vazia | Ela só fixa o marco zero. O aviso é sobre o que acontecer daqui pra frente, não sobre o histórico do grupo |
-| Peneira por `groupId:movieId` | Quem vota por último recebe o match duas vezes — na resposta do voto e na rodada seguinte. Sem ela, o pop-up reabriria sozinho |
-
-**Não é WebSocket nem SSE, de propósito.** Na Vercel a API é função, não processo: uma
-conexão longa não sobrevive ao limite de duração da função e não se propaga entre
-instâncias. Um push desses funcionaria no `npm run dev` e morreria exatamente em
-produção.
-
-O `@@index([groupId, createdAt])` no `Match` existe para esta consulta — com `groupId` na
-frente, cada grupo vira uma faixa contígua já ordenada por data, e o corte por `since` é
-o fim da faixa em vez de um filtro linha a linha. A migration sobe junto com o deploy —
-o build da Vercel roda `prisma migrate deploy` antes de compilar.
-
-## Duas contas no mesmo navegador
-
-A sessão ficava só no `localStorage`, que é **compartilhado por todas as abas** da mesma
-origem. Entrar como outra pessoa numa segunda aba trocava o token da primeira por baixo:
-ela seguia mostrando o nome de quem tinha entrado antes, mas toda chamada à API já saía
-com o token do segundo — porque `lerSessao()` é consultada a cada requisição. Dois
-usuários ao mesmo tempo, na prática, não davam.
-
-Agora a sessão é **fixada por aba no `sessionStorage`**, e o `localStorage` fica só como
-memória entre visitas:
-
-| Situação | O que acontece |
-| --- | --- |
-| Aba nova | Adota a última sessão do navegador e a fixa como sua |
-| Segunda aba entra com outra conta | Cada aba segue a sua; nenhuma derruba a outra |
-| Navegador fechado e reaberto | Volta a última sessão — a persistência de antes continua valendo |
-| Sair | Limpa os dois, para a conta não ressuscitar ao reabrir. Outras abas seguem intactas |
-
-> Isto muda o atalho de teste: para cair direto na tela logada, grave em
-> **`sessionStorage`**, não em `localStorage` (o `localStorage` ainda funciona para uma
-> aba só, por causa da adoção).
+Consequência no registro do voto: `POST /swipes` continua sendo um `upsert` e ainda
+repõe o `createdAt`, mas agora isso é caminho raro — pela tela não dá para votar duas
+vezes no mesmo filme. O upsert fica porque requisição repetida (rede instável, duplo
+toque) não pode virar erro.
 
 ## Ranking da semana
 
