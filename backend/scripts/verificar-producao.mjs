@@ -11,6 +11,8 @@
 // Precisa de duas contas de verificação em produção; passe-as em VERIFY_USER_A /
 // VERIFY_USER_B, ou deixe o script criar um par novo com `--criar-contas`. Prefira
 // reaproveitar: o app não tem "apagar conta", então cada par novo fica lá para sempre.
+// A senha padrão é a das contas que ele mesmo cria; para usar as do seed, informe
+// VERIFY_PASS_A / VERIFY_PASS_B.
 //
 // Precisa também da TMDB_API_KEY (vem do backend/.env) para conferir a classificação de
 // cada filme do feed contra a fonte, em vez de confiar no que o nosso código diz.
@@ -21,7 +23,11 @@ import 'dotenv/config';
 
 const API = process.env.VERIFY_API ?? 'https://match-flix-web-bixao.vercel.app';
 const SITE = process.env.VERIFY_SITE ?? 'https://match-flix-web-cyhd-sigma.vercel.app';
-const SENHA = 'senha1234';
+// Senha padrão das contas criadas por este script. As do seed usam outras
+// (demo/demo1234, amigo/amigo1234), então dá para apontar para elas com
+// VERIFY_PASS_A/VERIFY_PASS_B — útil logo depois de trocar de banco, quando as contas de
+// verificação antigas ficaram no banco velho.
+const SENHA_PADRAO = 'senha1234';
 const criarContas = process.argv.includes('--criar-contas');
 
 let falhou = false;
@@ -99,13 +105,14 @@ if (!caminhoBundle) {
 const marca = Date.now();
 async function conta(rotulo, envVar) {
   const nome = process.env[envVar];
-  if (nome) return { ...(await api('/auth/login', { method: 'POST', body: JSON.stringify({ username: nome, password: SENHA }) })), novo: false };
+  const senha = process.env[`VERIFY_PASS_${rotulo.toUpperCase()}`] ?? SENHA_PADRAO;
+  if (nome) return { ...(await api('/auth/login', { method: 'POST', body: JSON.stringify({ username: nome, password: senha }) })), novo: false };
   if (!criarContas) {
     console.log(`\n\x1b[31mFalta ${envVar}.\x1b[0m Passe as contas de verificação existentes ou rode com --criar-contas.`);
     process.exit(1);
   }
   const nomeNovo = `verificacao_deploy_${rotulo}_${marca}`;
-  return { ...(await api('/auth/register', { method: 'POST', body: JSON.stringify({ username: nomeNovo, password: SENHA, confirmPassword: SENHA }) })), novo: true };
+  return { ...(await api('/auth/register', { method: 'POST', body: JSON.stringify({ username: nomeNovo, password: SENHA_PADRAO, confirmPassword: SENHA_PADRAO }) })), novo: true };
 }
 const a = await conta('a', 'VERIFY_USER_A');
 const b = await conta('b', 'VERIFY_USER_B');
