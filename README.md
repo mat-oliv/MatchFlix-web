@@ -207,8 +207,15 @@ Crie um projeto em [supabase.com](https://supabase.com). No painel, vá em
 Com essa string, um comando resolve o resto:
 
 ```bash
-cd backend
+cd backend    # o script mora aqui; rodar da raiz dá ENOENT em package.json
 npm run supabase:configurar -- "postgresql://postgres.<ref>:<senha>@<região>.pooler.supabase.com:6543/postgres"
+```
+
+Se a senha tiver caractere especial (`@ : / ? #`), passe-a separada e não se preocupe
+com codificação:
+
+```bash
+npm run supabase:configurar -- "postgresql://postgres.<ref>@<região>.pooler.supabase.com:6543/postgres" --senha "sua-senha"
 ```
 
 Ele deduz as duas URLs, testa as duas conexões, grava no `backend/.env` (preservando as
