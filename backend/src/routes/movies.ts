@@ -5,11 +5,29 @@ import { prisma } from '../lib/prisma.js';
 import { exigirAutenticacao } from '../lib/auth.js';
 import { idiomaDaRequisicao, textosDe, type Idioma } from '../lib/idioma.js';
 
-// A TMDB tem centenas de páginas de populares. Começar sempre na 1 fazia todo mundo
-// ver os mesmos 20 filmes toda vez — sortear a página inicial dá variedade entre sessões.
-const PAGINA_INICIAL_MAX = 15;
+/**
+ * Última página que a TMDB entrega. Medido: a 500 responde normalmente e a 501 devolve
+ * HTTP 400 ("Pages start at 1 and max at 500"), que aqui viraria erro 500 na rota. Toda
+ * conta de página passa por `paginaValida()` por causa disso.
+ *
+ * São 500 × 20 = 10 mil filmes alcançáveis nesta ordenação. O catálogo filtrado tem
+ * ~22,8 mil, mas o resto está além do teto de paginação — e 10 mil é mais do que
+ * qualquer pessoa vota numa vida de uso.
+ */
+const MAX_PAGINA_TMDB = 500;
+
+/** Filmes por página na TMDB. Usado para estimar onde o catálogo já foi consumido. */
+const TAMANHO_PAGINA = 20;
+
 const MIN_FILMES = 10;
 const MAX_PAGINAS_POR_REQUISICAO = 5;
+
+/** Mantém a página dentro do que a TMDB serve, dando a volta em vez de estourar. */
+function paginaValida(pagina: number): number {
+  if (pagina < 1) return 1;
+  if (pagina > MAX_PAGINA_TMDB) return ((pagina - 1) % MAX_PAGINA_TMDB) + 1;
+  return pagina;
+}
 
 /** Quantos filmes o ranking mostra. Cada um custa uma consulta à TMDB na primeira vez. */
 const TAMANHO_RANKING = 10;
@@ -94,12 +112,7 @@ export async function movieRoutes(app: FastifyInstance) {
     const querySchema = z.object({ page: z.coerce.number().min(1).optional() });
     const { page } = querySchema.parse(request.query);
 
-    // Sem page = começo de sessão: sorteia onde entrar no catálogo.
-    let pagina = page ?? Math.floor(Math.random() * PAGINA_INICIAL_MAX) + 1;
-
-    // Só o que a pessoa CURTIU sai do feed em definitivo. Filme apenas passado volta a
-    // aparecer: passar é "hoje não", não "nunca mais", e sem isso o catálogo acaba
-    // rápido para quem usa bastante.
+    // Só o que a pessoa CURTIU sai do feed. Filme apenas passado ainda volta a aparecer.
     const jaCurtidos = new Set(
       (
         await prisma.swipe.findMany({
@@ -109,16 +122,31 @@ export async function movieRoutes(app: FastifyInstance) {
       ).map((s) => s.movieId)
     );
 
-    // Uma página pode vir inteira de filmes já curtidos — busca as seguintes até
-    // juntar filmes novos o bastante ou estourar o limite de tentativas.
+    // Onde entrar no catálogo quando não veio `page` (começo de sessão).
+    //
+    // Antes era sorteado entre as 15 primeiras páginas, e era essa a causa do feed
+    // "acabar": quem já tinha votado bastante consumia as 15 inteiras, então toda
+    // sessão nova caía em território gasto, varria o orçamento de páginas sem achar
+    // nada e recebia lista vazia.
+    //
+    // Agora a entrada acompanha o uso: cada 20 filmes votados equivalem a uma página já
+    // consumida, então quem votou muito começa mais adiante, onde ainda há filme novo.
+    // O varrimento abaixo cuida do resto — a estimativa não precisa ser exata, só
+    // precisa não começar atrás.
+    let pagina = paginaValida(page ?? Math.floor(jaCurtidos.size / TAMANHO_PAGINA) + 1);
+
+    // Uma página pode vir inteira de filmes já curtidos — busca as seguintes até juntar
+    // filmes novos o bastante ou gastar o orçamento desta requisição. Gastar o
+    // orçamento não é o fim do feed: `nextPage` avança, e a próxima requisição continua
+    // a varredura de onde esta parou.
     const novos: TmdbMovie[] = [];
 
     for (let i = 0; i < MAX_PAGINAS_POR_REQUISICAO && novos.length < MIN_FILMES; i++) {
       const filmes = await fetchPopularMovies(idiomaDaRequisicao(request), pagina);
+      pagina = paginaValida(pagina + 1);
       if (filmes.length === 0) break;
 
       novos.push(...filmes.filter((m) => !jaCurtidos.has(m.id)));
-      pagina++;
     }
 
     return reply.send({ movies: embaralhar(novos), nextPage: pagina });

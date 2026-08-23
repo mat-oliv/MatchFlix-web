@@ -24,6 +24,7 @@
 - [Scripts](#scripts)
 - [Deploy na Vercel](#deploy-na-vercel)
 - [Filme adulto não entra no feed](#filme-adulto-não-entra-no-feed)
+- [O feed não acaba](#o-feed-não-acaba)
 - [O que volta ao feed](#o-que-volta-ao-feed)
 - [Match em tempo real](#match-em-tempo-real)
 - [Duas contas no mesmo navegador](#duas-contas-no-mesmo-navegador)
@@ -430,6 +431,28 @@ etária, não mostrar. O preço é um blockbuster recém-anunciado demorar a apa
 > é pior que o pouco que ele deixa passar. E o ranking da semana conta os likes que já
 > estão no banco, então um filme 18 curtido **antes** desta mudança ainda pode aparecer
 > lá; como ele não volta ao feed, ninguém curte de novo e ele sai sozinho em sete dias.
+
+## O feed não acaba
+
+**Nenhuma tela de "você já votou em tudo".** Ela existia e aparecia cedo demais: a
+entrada no catálogo era sorteada entre as **15 primeiras páginas**, então quem já tinha
+votado bastante caía sempre em território gasto, o servidor varria o orçamento de
+páginas sem achar nada e devolvia lista vazia — que a tela traduzia como fim de feed.
+
+Duas mudanças resolvem:
+
+1. **A entrada acompanha o uso.** Cada 20 filmes votados equivalem a uma página já
+   consumida, então a sessão começa adiante, onde ainda há filme novo. Medido: depois de
+   710 curtidas, sessão nova entra na página 36 e traz 20 filmes inéditos.
+2. **Resposta vazia deixou de significar fim.** O servidor avança o `nextPage` mesmo
+   quando não achou nada, e a tela simplesmente continua a varredura de onde parou.
+   Verificado no navegador: com três respostas vazias seguidas forçadas, o card aparece
+   em 1,3s e nenhuma mensagem de fim é exibida.
+
+**A TMDB corta a paginação na página 500** — a 501 responde HTTP 400, que aqui viraria
+erro 500. Toda conta de página passa por `paginaValida()`, que dá a volta em vez de
+estourar. São 500 × 20 = **10 mil filmes** alcançáveis nesta ordenação; o catálogo
+filtrado tem ~22,8 mil, mas o resto está além do teto da API.
 
 ## O que volta ao feed
 
