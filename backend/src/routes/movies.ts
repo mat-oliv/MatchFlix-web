@@ -112,11 +112,17 @@ export async function movieRoutes(app: FastifyInstance) {
     const querySchema = z.object({ page: z.coerce.number().min(1).optional() });
     const { page } = querySchema.parse(request.query);
 
-    // Só o que a pessoa CURTIU sai do feed. Filme apenas passado ainda volta a aparecer.
-    const jaCurtidos = new Set(
+    // Filme votado sai do feed para sempre — curtido OU passado. Repare que não há
+    // `liked` no filtro: é essa ausência a regra inteira. Passar é "não quero", não
+    // "hoje não".
+    //
+    // Isto só é sustentável porque a entrada no catálogo acompanha o uso (ver abaixo):
+    // com a entrada sorteada entre as 15 primeiras páginas, excluir os passados esvaziava
+    // o feed em poucas centenas de votos.
+    const jaVotados = new Set(
       (
         await prisma.swipe.findMany({
-          where: { userId: request.userId, liked: true },
+          where: { userId: request.userId },
           select: { movieId: true },
         })
       ).map((s) => s.movieId)
@@ -133,9 +139,9 @@ export async function movieRoutes(app: FastifyInstance) {
     // consumida, então quem votou muito começa mais adiante, onde ainda há filme novo.
     // O varrimento abaixo cuida do resto — a estimativa não precisa ser exata, só
     // precisa não começar atrás.
-    let pagina = paginaValida(page ?? Math.floor(jaCurtidos.size / TAMANHO_PAGINA) + 1);
+    let pagina = paginaValida(page ?? Math.floor(jaVotados.size / TAMANHO_PAGINA) + 1);
 
-    // Uma página pode vir inteira de filmes já curtidos — busca as seguintes até juntar
+    // Uma página pode vir inteira de filmes já votados — busca as seguintes até juntar
     // filmes novos o bastante ou gastar o orçamento desta requisição. Gastar o
     // orçamento não é o fim do feed: `nextPage` avança, e a próxima requisição continua
     // a varredura de onde esta parou.
@@ -146,7 +152,7 @@ export async function movieRoutes(app: FastifyInstance) {
       pagina = paginaValida(pagina + 1);
       if (filmes.length === 0) break;
 
-      novos.push(...filmes.filter((m) => !jaCurtidos.has(m.id)));
+      novos.push(...filmes.filter((m) => !jaVotados.has(m.id)));
     }
 
     return reply.send({ movies: embaralhar(novos), nextPage: pagina });
