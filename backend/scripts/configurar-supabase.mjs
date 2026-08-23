@@ -2,6 +2,9 @@
 //
 //   npm run supabase:configurar -- "<string de conexão do painel>"
 //   npm run supabase:configurar -- "<...>" --vercel --seed
+//   npm run supabase:configurar -- "<...sem a senha...>" --senha "minha senha"
+//
+// RODE DE DENTRO DE backend/ — é lá que está o package.json com este script.
 //
 // O Supabase é Postgres, então nada no código muda: o que muda é para onde a
 // DATABASE_URL e a DIRECT_URL apontam. Este script existe porque essas duas não são
@@ -40,9 +43,18 @@ function morrer(titulo, ...detalhes) {
 }
 
 const args = process.argv.slice(2);
-const bruta = args.find((a) => !a.startsWith('--'));
+const posicionais = args.filter((a) => !a.startsWith('--'));
 const querVercel = args.includes('--vercel');
 const querSeed = args.includes('--seed');
+
+// `--senha` existe para a senha NÃO precisar viajar dentro da URL. Assim ela pode ter
+// @ : / ? # sem virar codificação manual, e um `--senha` separado torna impossível
+// colar outra coisa grudada nela sem perceber — que foi como uma tentativa real acabou
+// com "npm run dev" no meio da senha.
+const iSenha = args.indexOf('--senha');
+const senhaAvulsa = iSenha >= 0 ? args[iSenha + 1] : undefined;
+if (iSenha >= 0 && !senhaAvulsa) morrer('`--senha` veio sem valor.');
+const bruta = posicionais.find((a) => a !== senhaAvulsa);
 
 if (!bruta) {
   morrer(
@@ -85,11 +97,28 @@ try {
 if (!/^postgres(ql)?:$/.test(url.protocol)) {
   morrer(`Esperava uma URL postgres://, recebi "${url.protocol}//".`);
 }
+if (senhaAvulsa) {
+  // `url.password =` já faz a codificação percentual necessária.
+  url.password = senhaAvulsa;
+}
 if (!url.password) {
   morrer(
     'A string não tem senha.',
     'O formato é postgresql://USUARIO:SENHA@HOST:PORTA/postgres.',
-    'Se a sua senha tem caracteres especiais (@ : / ? #), ela precisa ir codificada em URL.'
+    'Mais simples: deixe a senha fora da URL e passe `--senha "sua-senha"`,',
+    'que aí caractere especial não precisa de codificação manual.'
+  );
+}
+
+// Senha com espaço quase nunca é senha: é colagem acidental. Já aconteceu de um
+// `npm run dev` entrar no meio da senha e o erro só aparecer como "authentication
+// failed", que manda a pessoa investigar o lado errado.
+if (/\s|%20/.test(url.password)) {
+  morrer(
+    'A senha tem espaço em branco — provavelmente algo foi colado junto.',
+    `Recebi como senha: "${decodeURIComponent(url.password).replace(/./g, (c, i) => (i < 3 ? c : '•'))}"`,
+    '',
+    'Confira a string, ou passe a senha separada: --senha "sua-senha"'
   );
 }
 
@@ -164,7 +193,9 @@ if (!okPool || !okDireta) {
     'Alguma das conexões falhou — nada foi gravado.',
     '',
     'Causas comuns:',
-    '  · senha errada, ou com caractere especial não codificado em URL;',
+    '  · senha errada — se a mensagem acima diz "Authentication failed", o host e o',
+    '    projeto estão certos e SÓ a senha está errada. Redefina em',
+    '    Supabase → Settings → Database → Database password → Reset database password;',
     '  · projeto do Supabase pausado (o plano gratuito pausa após ~1 semana parado);',
     '  · string da conexão direta num ambiente só-IPv4 — use a do Transaction pooler.'
   );
