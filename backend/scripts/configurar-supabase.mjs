@@ -246,15 +246,23 @@ if (querSeed) {
 // --- 6. Levar para a Vercel ---
 if (querVercel) {
   console.log('\nGravando as variáveis na Vercel (produção)…');
+  // Production E preview. `vercel env rm <nome> production` apaga a ENTRADA inteira
+  // quando ela cobre os dois ambientes — na primeira execução isto deixou os deploys de
+  // preview sem banco, sem nenhum aviso. Por isso os dois são regravados sempre.
+  const ambientes = ['production', 'preview'];
   for (const [chave, valor] of Object.entries(novos)) {
-    // `env rm` antes porque `env add` não substitui valor existente.
-    spawnSync('npx', ['vercel', 'env', 'rm', chave, 'production', '--yes'], { cwd: dirname(raizBackend), stdio: 'ignore' });
-    const add = spawnSync('npx', ['vercel', 'env', 'add', chave, 'production'], {
-      cwd: dirname(raizBackend),
-      input: valor,
-      encoding: 'utf8',
-    });
-    add.status === 0 ? ok(`${chave} gravada na Vercel`) : aviso(`não consegui gravar ${chave}: ${(add.stderr ?? '').trim().slice(0, 160)}`);
+    for (const ambiente of ambientes) {
+      // `env rm` antes porque `env add` não substitui valor existente.
+      spawnSync('npx', ['vercel', 'env', 'rm', chave, ambiente, '--yes'], { cwd: dirname(raizBackend), stdio: 'ignore' });
+      const add = spawnSync('npx', ['vercel', 'env', 'add', chave, ambiente], {
+        cwd: dirname(raizBackend),
+        input: valor,
+        encoding: 'utf8',
+      });
+      add.status === 0
+        ? ok(`${chave} gravada na Vercel (${ambiente})`)
+        : aviso(`não consegui gravar ${chave} em ${ambiente}: ${(add.stderr ?? '').trim().slice(0, 140)}`);
+    }
   }
   console.log('\n  A Vercel só passa a usar valor novo no PRÓXIMO deploy.');
   console.log('  Publique com: git commit --allow-empty -m "chore: point at Supabase" && git push origin master');
