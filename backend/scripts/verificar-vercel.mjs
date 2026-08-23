@@ -193,6 +193,6 @@ if (falhou) {
 console.log(
   '\n✓ os portões locais da Vercel passaram.\n' +
     '  Isto NÃO cobre o que depende da infra dela (empacotamento dos engines do Prisma,\n' +
-    '  variáveis do painel, banco da Neon). Para o build real, veja `npx vercel build`\n' +
+    '  variáveis do painel, banco do Supabase). Para o build real, veja `npx vercel build`\n' +
     '  no README.\n',
 );

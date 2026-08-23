@@ -14,7 +14,8 @@
     "prisma:migrate": "prisma migrate dev",
     "migrate:deploy": "prisma migrate deploy",
     "seed": "prisma db seed",
-    "verify:prod": "node scripts/verificar-producao.mjs"
+    "verify:prod": "node scripts/verificar-producao.mjs",
+    "supabase:configurar": "node scripts/configurar-supabase.mjs"
   },
   "engines": {
     "node": ">=20"

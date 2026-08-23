@@ -166,6 +166,7 @@ npm run dev              # http://localhost:5173
 | `npm run typecheck`      | Checa tipos sem gerar arquivos                     |
 | `npm run verify:vercel`  | Roda os portões da Vercel localmente, sem deploy    |
 | `npm run verify:prod`    | Testa a produção depois do deploy (ver abaixo)     |
+| `npm run supabase:configurar` | Aponta o projeto para um banco do Supabase        |
 | `npm run migrate:deploy` | Aplica as migrations pendentes no banco            |
 
 **frontend**
@@ -179,7 +180,7 @@ npm run dev              # http://localhost:5173
 ## Deploy na Vercel
 
 São **dois projetos na Vercel, a partir deste mesmo repositório** — um serve o site
-estático, o outro roda a API — mais um Postgres gerenciado na Neon.
+estático, o outro roda a API — mais um Postgres gerenciado no Supabase.
 
 Na Vercel a API **não é um processo escutando porta** — não existe servidor de longa
 duração lá. Ela empacota o entrypoint do diretório de saída como função e chama, a cada
@@ -197,16 +198,40 @@ Daí os dois arquivos de entrada:
 A montagem mora no mesmo arquivo do handler porque a Vercel **exige** que o entrypoint
 importe `fastify` diretamente (veja abaixo). Rota nova entra no `construirApp`.
 
-### 1. Banco na Neon
+### 1. Banco no Supabase
 
-Crie um projeto em [neon.tech](https://neon.tech) e guarde as **duas** strings de conexão:
+Crie um projeto em [supabase.com](https://supabase.com). No painel, vá em
+**Settings → Database → Connection string**, aba **Transaction pooler**, e troque
+`[YOUR-PASSWORD]` pela senha do banco.
 
-| Variável       | Qual string usar                                                    |
-| -------------- | ------------------------------------------------------------------- |
-| `DATABASE_URL` | a **com pool**, que tem `-pooler` no host — é a que a aplicação usa  |
-| `DIRECT_URL`   | a **direta**, sem `-pooler` — só as migrations passam por ela        |
+Com essa string, um comando resolve o resto:
 
-Migration através do pgbouncer falha; é por isso que são duas.
+```bash
+cd backend
+npm run supabase:configurar -- "postgresql://postgres.<ref>:<senha>@<região>.pooler.supabase.com:6543/postgres"
+```
+
+Ele deduz as duas URLs, testa as duas conexões, grava no `backend/.env` (preservando as
+outras variáveis) e aplica as migrations. Some `--seed` para criar as contas de
+demonstração e `--vercel` para gravar as variáveis em produção.
+
+> **Não é a "API key".** As chaves `anon` e `service_role` servem à API REST/JS do
+> Supabase; este projeto fala Postgres direto, pelo Prisma, e precisa da string de
+> conexão — a que contém a senha do banco. O script recusa um JWT com essa explicação.
+
+São **duas** URLs porque elas não são intercambiáveis:
+
+| Variável       | Qual usar                                     | Por quê |
+| -------------- | --------------------------------------------- | ------- |
+| `DATABASE_URL` | pooler de **transação**, porta **6543**, com `?pgbouncer=true&connection_limit=1` | É por onde a API fala. Sem `pgbouncer=true` o Prisma tenta prepared statements, que esse pooler não suporta, e as consultas falham de forma intermitente |
+| `DIRECT_URL`   | pooler de **sessão**, porta **5432**, mesmo host | Migration por pooler de transação falha |
+
+> Evite a conexão **direta** (`db.<ref>.supabase.co`) para a `DIRECT_URL`: em muitos
+> projetos ela só responde por IPv6, e o build da Vercel sai por IPv4 — a migration
+> falharia com "can't reach database server". O pooler de sessão funciona nos dois.
+
+> No plano gratuito o projeto **pausa depois de ~1 semana sem uso**. Se a API começar a
+> dar erro de conexão do nada, verifique se o projeto está pausado no painel.
 
 O schema é aplicado **pelo próprio build da Vercel**: o `buildCommand` em
 `backend/vercel.json` roda `prisma migrate deploy` antes de compilar, então toda
@@ -289,7 +314,7 @@ verdade. Ele reprova, com a mensagem que a Vercel daria, os dois casos que já q
 deploy aqui.
 
 O que ele **não** cobre é o que só existe na infra dela: empacotamento dos engines do
-Prisma, variáveis do painel e o banco da Neon. Para isso, rode o build real:
+Prisma, variáveis do painel e o banco do Supabase. Para isso, rode o build real:
 
 ```bash
 # na RAIZ do repositório, não dentro de backend/
@@ -334,7 +359,7 @@ curl https://sua-api.vercel.app/health     # {"status":"ok"}
 ```
 
 Depois abra o site, crie uma conta e curta um filme. As contas de demonstração **não**
-existem em produção; para criá-las, rode `npm run seed` apontando para o banco da Neon.
+existem em produção; para criá-las, rode `npm run seed` apontando para o banco do Supabase.
 
 > No plano Hobby a função tem limite de 10s por requisição. A rota do feed pode buscar
 > várias páginas na TMDB em sequência — se ela chegar perto do limite, reduza
