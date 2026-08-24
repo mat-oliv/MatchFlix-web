@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { createGroup, joinGroup, getMeusGrupos, ApiError, type UserGroup } from '../lib/api';
+import { MembrosDoGrupo } from '../components/MembrosDoGrupo';
 import { txt } from '../lib/idioma';
 
 function mensagemDoErro(err: unknown, padrao: string) {
@@ -23,6 +24,9 @@ export function Groups({ sinalDeAtualizacao }: Props) {
   const [grupos, setGrupos] = useState<UserGroup[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [copiado, setCopiado] = useState<string | null>(null);
+  // Grupo cuja janela de membros está aberta. Guarda o grupo inteiro, e não só o id,
+  // porque o pop-up mostra nome e contagem antes de a lista chegar do servidor.
+  const [grupoDosMembros, setGrupoDosMembros] = useState<UserGroup | null>(null);
 
   const carregarGrupos = useCallback(async () => {
     try {
@@ -132,8 +136,18 @@ export function Groups({ sinalDeAtualizacao }: Props) {
                 <header className="flex items-baseline justify-between gap-3 mb-3">
                   <h3 className="font-display text-xl">{grupo.name}</h3>
                   <p className="text-sm text-white/50 shrink-0">
-                    {grupo.memberCount} {txt.membros(grupo.memberCount)} ·{' '}
-                    {grupo.matchCount} {txt.partidas(grupo.matchCount)}
+                    {/* A contagem de membros abre a janela com a foto e o nome de cada um.
+                        Sublinhado pontilhado porque, sem ele, ninguém adivinha que dá
+                        pra clicar num texto no meio do cabeçalho. */}
+                    <button
+                      onClick={() => setGrupoDosMembros(grupo)}
+                      aria-haspopup="dialog"
+                      aria-label={txt.verMembros(grupo.name)}
+                      className="underline decoration-dotted underline-offset-4 hover:text-white transition"
+                    >
+                      {grupo.memberCount} {txt.membros(grupo.memberCount)}
+                    </button>{' '}
+                    · {grupo.matchCount} {txt.partidas(grupo.matchCount)}
                   </p>
                 </header>
 
@@ -183,6 +197,10 @@ export function Groups({ sinalDeAtualizacao }: Props) {
           </div>
         )}
       </section>
+
+      {grupoDosMembros && (
+        <MembrosDoGrupo grupo={grupoDosMembros} onFechar={() => setGrupoDosMembros(null)} />
+      )}
     </div>
   );
 }

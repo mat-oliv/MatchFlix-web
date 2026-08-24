@@ -88,6 +88,10 @@ const pt = {
   copiado: 'Copiado!',
   copiar: 'Copiar',
   nenhumMatch: 'Nenhum match ainda. Curtam filmes na aba Filmes!',
+  verMembros: (nome: string) => `Ver quem está no grupo "${nome}"`,
+  membrosDoGrupo: 'Membros do grupo',
+  euMesmo: 'você',
+  erroMembros: 'Não foi possível carregar os membros.',
 
   // ranking
   abaRanking: 'Ranking',
@@ -210,6 +214,10 @@ const en: typeof pt = {
   copiado: 'Copied!',
   copiar: 'Copy',
   nenhumMatch: 'No matches yet. Like some movies in the Movies tab!',
+  verMembros: (nome: string) => `See who is in the group "${nome}"`,
+  membrosDoGrupo: 'Group members',
+  euMesmo: 'you',
+  erroMembros: 'Could not load the members.',
 
   // ranking
   abaRanking: 'Top',

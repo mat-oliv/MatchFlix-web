@@ -178,6 +178,21 @@ export function getMeusGrupos(): Promise<UserGroup[]> {
   return pedir('/me/groups');
 }
 
+/** Uma pessoa do grupo, como aparece na janela de membros. */
+export type MembroDoGrupo = {
+  id: string;
+  username: string;
+  avatarUrl: string | null;
+};
+
+/**
+ * Quem está no grupo, na ordem em que entraram. A API só responde para quem é membro
+ * dele — não dá para espiar grupo alheio sabendo o id.
+ */
+export function getMembrosDoGrupo(groupId: string): Promise<MembroDoGrupo[]> {
+  return pedir(`/groups/${encodeURIComponent(groupId)}/members`);
+}
+
 export function createGroup(name: string): Promise<Group> {
   return pedir('/groups', { method: 'POST', body: JSON.stringify({ name }) });
 }
