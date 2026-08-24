@@ -172,4 +172,36 @@ export async function groupRoutes(app: FastifyInstance) {
 
     return reply.send(await enriquecerFilmes(matches, idiomaDaRequisicao(request)));
   });
+
+  /**
+   * Quem está num grupo — foto e nome de cada membro.
+   *
+   * Só para quem é membro dele: a lista traz a foto de perfil das pessoas, e o código
+   * de convite circula por fora do app, então qualquer um que descobrisse um `groupId`
+   * veria as fotos de um grupo alheio.
+   *
+   * Sem paginação de propósito: grupo aqui é um punhado de amigos. O que pesa na
+   * resposta são os avatares, que viajam como data URL (~30 KB cada, ver
+   * `/me/avatar`) — se um dia existir grupo com dezenas de membros, é este ponto que
+   * precisa virar página, não a contagem.
+   */
+  app.get('/groups/:id/members', { preHandler: exigirAutenticacao }, async (request, reply) => {
+    const paramsSchema = z.object({ id: z.string() });
+    const { id } = paramsSchema.parse(request.params);
+
+    const membro = await prisma.groupMember.findUnique({
+      where: { groupId_userId: { groupId: id, userId: request.userId } },
+    });
+    if (!membro) return reply.status(403).send({ error: textos(request).foraDoGrupo });
+
+    // Por ordem de entrada: quem criou o grupo aparece primeiro, e a ordem não muda
+    // entre aberturas da janela.
+    const membros = await prisma.groupMember.findMany({
+      where: { groupId: id },
+      orderBy: { joinedAt: 'asc' },
+      select: { user: { select: { id: true, username: true, avatarUrl: true } } },
+    });
+
+    return reply.send(membros.map(({ user }) => user));
+  });
 }

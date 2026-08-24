@@ -47,6 +47,8 @@ COMO FUNCIONA
   catálogo ele busca.
 - Aba "Grupos": criar um grupo, que gera um código de convite para compartilhar, ou
   entrar num grupo existente digitando o código.
+- Ainda na aba "Grupos", tocar na contagem de membros do grupo ("3 membros") abre uma
+  janela com a foto de perfil e o nome de cada pessoa que está nele.
 - Match: acontece no momento em que alguém curte um filme, se TODOS os membros daquele
   grupo já curtiram o mesmo filme. O aviso aparece na tela de TODO MUNDO do grupo em
   poucos segundos, mesmo de quem já tinha curtido antes e não está votando naquela hora.
