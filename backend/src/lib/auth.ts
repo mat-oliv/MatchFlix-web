@@ -1,5 +1,6 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { lerToken } from './token.js';
+import { textos } from './idioma.js';
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -15,7 +16,7 @@ export async function exigirAutenticacao(request: FastifyRequest, reply: Fastify
   const payload = token ? lerToken(token) : null;
 
   if (!payload) {
-    return reply.status(401).send({ error: 'Sessão expirada ou inválida. Entre novamente.' });
+    return reply.status(401).send({ error: textos(request).sessaoInvalida });
   }
 
   request.userId = payload.userId;

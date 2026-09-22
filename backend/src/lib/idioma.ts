@@ -35,6 +35,7 @@ const pt = {
   usuarioEmUso: (usuario: string) => `O usuário "${usuario}" já está em uso.`,
   preenchaLogin: 'Preencha usuário e senha.',
   credenciaisInvalidas: 'Usuário ou senha inválidos.',
+  sessaoInvalida: 'Sessão expirada ou inválida. Entre novamente.',
   usuarioNaoEncontrado: 'Usuário não encontrado.',
 
   // perfil
@@ -81,6 +82,7 @@ const en: typeof pt = {
   usuarioEmUso: (usuario: string) => `The username "${usuario}" is already taken.`,
   preenchaLogin: 'Fill in username and password.',
   credenciaisInvalidas: 'Invalid username or password.',
+  sessaoInvalida: 'Your session expired or is no longer valid. Sign in again.',
   usuarioNaoEncontrado: 'User not found.',
 
   // perfil
