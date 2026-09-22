@@ -1,6 +1,6 @@
-import { useEffect } from 'react';
 import type { Movie } from '../lib/api';
 import { txt } from '../lib/idioma';
+import { useDialogo } from '../lib/useDialogo';
 
 type Props = {
   movie: Movie;
@@ -9,11 +9,8 @@ type Props = {
 
 /** Pop-up com a descrição completa do filme — abre ao tocar no card. */
 export function DetalhesFilme({ movie, onFechar }: Props) {
-  useEffect(() => {
-    const aoTeclar = (e: KeyboardEvent) => e.key === 'Escape' && onFechar();
-    window.addEventListener('keydown', aoTeclar);
-    return () => window.removeEventListener('keydown', aoTeclar);
-  }, [onFechar]);
+  // Escape, foco preso dentro do diálogo e foco devolvido ao card ao fechar.
+  const painel = useDialogo(onFechar);
 
   const ano = movie.releaseDate ? movie.releaseDate.slice(0, 4) : null;
   const nota = movie.voteAverage > 0 ? movie.voteAverage.toFixed(1) : null;
@@ -21,13 +18,15 @@ export function DetalhesFilme({ movie, onFechar }: Props) {
   return (
     <div
       className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center px-4 py-8"
-      role="dialog"
-      aria-modal="true"
-      aria-label={txt.detalhesDe(movie.title)}
       onClick={onFechar}
     >
       <div
-        className="bg-panel border border-white/10 rounded-2xl w-full max-w-md max-h-full flex flex-col shadow-2xl shadow-black/50"
+        ref={painel}
+        tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-label={txt.detalhesDe(movie.title)}
+        className="bg-panel border border-white/10 rounded-2xl w-full max-w-md max-h-full flex flex-col shadow-2xl shadow-black/50 focus:outline-none"
         onClick={(e) => e.stopPropagation()}
       >
         <header className="flex items-start gap-4 p-5 border-b border-white/10">
@@ -42,17 +41,19 @@ export function DetalhesFilme({ movie, onFechar }: Props) {
           <div className="min-w-0 flex-1">
             <h2 className="font-display text-xl leading-tight">{movie.title}</h2>
             {(ano || nota) && (
-              <p className="text-sm text-white/50 mt-1">
+              <p className="text-sm text-muted mt-1">
                 {[ano, nota && `★ ${nota}`].filter(Boolean).join(' · ')}
               </p>
             )}
           </div>
 
+          {/* 44px: o ✕ tinha 32px, abaixo do alvo recomendado em
+              `accessibility.md › Mobility`, e é o controle que todo mundo procura
+              primeiro para sair. */}
           <button
-            autoFocus
             onClick={onFechar}
             aria-label={txt.fechar}
-            className="shrink-0 w-8 h-8 rounded-full text-white/50 hover:text-white hover:bg-white/10 transition"
+            className="shrink-0 w-11 h-11 grid place-items-center rounded-full text-muted transition hover:text-cream hover:bg-white/10 active:scale-95"
           >
             ✕
           </button>
@@ -60,7 +61,7 @@ export function DetalhesFilme({ movie, onFechar }: Props) {
 
         {/* A sinopse é o único trecho que pode crescer: rola aqui dentro, não na tela. */}
         <div className="p-5 overflow-y-auto">
-          <p className="text-sm text-white/80 leading-relaxed whitespace-pre-line">
+          <p className="text-sm text-cream/90 leading-relaxed whitespace-pre-line">
             {movie.overview?.trim() || txt.semDescricao}
           </p>
         </div>

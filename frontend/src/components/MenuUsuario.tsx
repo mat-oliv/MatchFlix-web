@@ -8,6 +8,7 @@ import {
   type Perfil,
 } from '../lib/api';
 import { txt } from '../lib/idioma';
+import { useDialogo } from '../lib/useDialogo';
 
 type Props = {
   onFechar: () => void;
@@ -81,6 +82,9 @@ export function MenuUsuario({ onFechar, onSair, onFotoAtualizada }: Props) {
   const cursor = useRef<string | undefined>(undefined);
   const buscando = useRef(false);
 
+  // Escape, foco preso dentro do menu e foco devolvido ao botão do cabeçalho.
+  const painel = useDialogo(onFechar);
+
   const areaCurtidos = useRef<HTMLDivElement | null>(null);
   const sentinela = useRef<HTMLDivElement | null>(null);
 
@@ -139,12 +143,6 @@ export function MenuUsuario({ onFechar, onSair, onFotoAtualizada }: Props) {
     return () => observer.disconnect();
   }, [carregarMais, curtidos.length, temMais, erroPagina]);
 
-  useEffect(() => {
-    const aoTeclar = (e: KeyboardEvent) => e.key === 'Escape' && onFechar();
-    window.addEventListener('keydown', aoTeclar);
-    return () => window.removeEventListener('keydown', aoTeclar);
-  }, [onFechar]);
-
   async function aoEscolherFoto(evento: ChangeEvent<HTMLInputElement>) {
     const arquivo = evento.target.files?.[0];
     // Zera o input: sem isso, escolher o MESMO arquivo de novo não dispara `change`.
@@ -177,13 +175,15 @@ export function MenuUsuario({ onFechar, onSair, onFotoAtualizada }: Props) {
   return (
     <div
       className="fixed inset-0 z-50 bg-black/70 flex items-start justify-center px-4 py-10 overflow-y-auto"
-      role="dialog"
-      aria-modal="true"
-      aria-label={txt.menuUsuario}
       onClick={onFechar}
     >
       <div
-        className="bg-panel border border-white/10 rounded-2xl w-full max-w-sm shadow-2xl shadow-black/50"
+        ref={painel}
+        tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-label={txt.menuUsuario}
+        className="bg-panel border border-white/10 rounded-2xl w-full max-w-sm shadow-2xl shadow-black/50 focus:outline-none"
         onClick={(e) => e.stopPropagation()}
       >
         <header className="flex items-start gap-4 p-5 border-b border-white/10">
@@ -202,8 +202,8 @@ export function MenuUsuario({ onFechar, onSair, onFotoAtualizada }: Props) {
             </button>
 
             <p
-              className={`mt-1 text-center text-[10px] leading-tight ${
-                erroFoto ? 'text-rose-300' : 'text-white/40'
+              className={`mt-1 text-center text-xs leading-tight ${
+                erroFoto ? 'text-rose-300' : 'text-muted'
               }`}
             >
               {erroFoto ?? (enviandoFoto ? txt.enviandoFoto : txt.cliqueParaAlterar)}
@@ -222,7 +222,7 @@ export function MenuUsuario({ onFechar, onSair, onFotoAtualizada }: Props) {
             <p className="font-display text-xl truncate">
               {perfil?.user.username ?? '...'}
             </p>
-            <p className="text-sm text-white/50 mt-0.5">
+            <p className="text-sm text-muted mt-0.5">
               {perfil ? (
                 <>
                   {perfil.groupCount} {txt.gruposContagem(perfil.groupCount)} ·{' '}
@@ -237,23 +237,25 @@ export function MenuUsuario({ onFechar, onSair, onFotoAtualizada }: Props) {
           <button
             onClick={onFechar}
             aria-label={txt.fechar}
-            className="shrink-0 w-8 h-8 rounded-full text-white/50 hover:text-white hover:bg-white/10 transition"
+            className="shrink-0 w-11 h-11 grid place-items-center rounded-full text-muted transition hover:text-cream hover:bg-white/10 active:scale-95"
           >
             ✕
           </button>
         </header>
 
         <section className="p-5">
-          <h3 className="font-display text-sm text-white/70 mb-3">{txt.filmesCurtidos}</h3>
+          <h3 className="font-display text-sm text-cream/80 mb-3">{txt.filmesCurtidos}</h3>
 
           {erro ? (
-            <p className="text-sm text-rose-300">{erro}</p>
-          ) : carregandoPrimeiraPagina ? (
-            <p className="text-sm text-white/40">{txt.carregando}</p>
-          ) : curtidos.length === 0 && !erroPagina ? (
-            <p className="text-sm text-white/40">
-              {txt.semCurtidos}
+            <p role="alert" className="text-sm text-rose-300">
+              {erro}
             </p>
+          ) : carregandoPrimeiraPagina ? (
+            <p role="status" className="text-sm text-muted">
+              {txt.carregando}
+            </p>
+          ) : curtidos.length === 0 && !erroPagina ? (
+            <p className="text-sm text-muted">{txt.semCurtidos}</p>
           ) : (
             <div
               ref={areaCurtidos}
@@ -271,12 +273,12 @@ export function MenuUsuario({ onFechar, onSair, onFotoAtualizada }: Props) {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-[10px] text-white/40 text-center px-1">
+                        <div className="w-full h-full flex items-center justify-center text-xs text-muted text-center px-1">
                           {txt.semPoster}
                         </div>
                       )}
                     </div>
-                    <figcaption className="text-[11px] text-white/70 leading-tight line-clamp-2">
+                    <figcaption className="text-xs text-cream/90 leading-tight line-clamp-2">
                       {filme.title}
                     </figcaption>
                   </figure>
@@ -285,17 +287,19 @@ export function MenuUsuario({ onFechar, onSair, onFotoAtualizada }: Props) {
 
               {erroPagina ? (
                 <div className="pt-3 text-center">
-                  <p className="text-xs text-rose-300 mb-2">{erroPagina}</p>
+                  <p role="alert" className="text-xs text-rose-300 mb-2">
+                    {erroPagina}
+                  </p>
                   <button
                     onClick={carregarMais}
-                    className="text-xs px-3 py-1.5 rounded-full bg-white/10 border border-white/20 hover:bg-white/15 transition"
+                    className="text-sm px-4 min-h-[44px] rounded-full bg-white/10 border border-edge transition hover:bg-white/15 active:scale-95"
                   >
                     {txt.tentarDeNovo}
                   </button>
                 </div>
               ) : (
                 temMais && (
-                  <div ref={sentinela} className="py-3 text-center text-xs text-white/40">
+                  <div ref={sentinela} role="status" className="py-3 text-center text-xs text-muted">
                     {txt.carregandoMais}
                   </div>
                 )
@@ -307,7 +311,7 @@ export function MenuUsuario({ onFechar, onSair, onFotoAtualizada }: Props) {
         <footer className="p-5 pt-0">
           <button
             onClick={onSair}
-            className="w-full py-2 rounded-full text-sm text-white/70 border border-white/15 hover:text-white hover:border-white/30 transition"
+            className="w-full min-h-[44px] rounded-full text-sm text-cream/80 border border-edge transition hover:text-cream hover:bg-white/5 active:scale-[0.98]"
           >
             {txt.sairDaConta}
           </button>

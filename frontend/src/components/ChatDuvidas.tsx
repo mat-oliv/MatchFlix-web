@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { perguntarAoAssistente, ApiError, type FalaDoChat } from '../lib/api';
 import { txt } from '../lib/idioma';
+import { useDialogo } from '../lib/useDialogo';
 
 type Autor = 'pessoa' | 'assistente' | 'erro';
 
@@ -44,11 +45,9 @@ export function ChatDuvidas({ onFechar }: Props) {
   const proximoId = useRef(1);
   const fimDaLista = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const aoTeclar = (e: KeyboardEvent) => e.key === 'Escape' && onFechar();
-    window.addEventListener('keydown', aoTeclar);
-    return () => window.removeEventListener('keydown', aoTeclar);
-  }, [onFechar]);
+  // Escape, foco preso no painel e foco devolvido ao botão redondo ao fechar. O campo
+  // de escrita continua nascendo em foco: o hook não rouba foco de quem já está dentro.
+  const painel = useDialogo(onFechar);
 
   // Mensagem nova entra embaixo; sem isso ela nasceria fora da área visível.
   useEffect(() => {
@@ -97,25 +96,27 @@ export function ChatDuvidas({ onFechar }: Props) {
   return (
     <div
       className="fixed inset-0 z-50 bg-black/40 flex items-end justify-start p-4 sm:p-6"
-      role="dialog"
-      aria-modal="true"
-      aria-label={txt.chatTitulo}
       onClick={onFechar}
     >
       <div
-        className="bg-panel border border-white/10 rounded-2xl w-full max-w-sm h-[min(30rem,80dvh)] flex flex-col shadow-2xl shadow-black/50"
+        ref={painel}
+        tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-label={txt.chatTitulo}
+        className="bg-panel border border-white/10 rounded-2xl w-full max-w-sm h-[min(30rem,80dvh)] flex flex-col shadow-2xl shadow-black/50 focus:outline-none"
         onClick={(e) => e.stopPropagation()}
       >
         <header className="shrink-0 flex items-center gap-3 px-5 py-4 border-b border-white/10">
           <div className="min-w-0 flex-1">
             <h2 className="font-display text-lg leading-tight">{txt.chatTitulo}</h2>
-            <p className="text-xs text-white/40 mt-0.5">{txt.chatSubtitulo}</p>
+            <p className="text-xs text-muted mt-0.5">{txt.chatSubtitulo}</p>
           </div>
 
           <button
             onClick={onFechar}
             aria-label={txt.fechar}
-            className="shrink-0 w-8 h-8 rounded-full text-white/50 hover:text-white hover:bg-white/10 transition"
+            className="shrink-0 w-11 h-11 grid place-items-center rounded-full text-muted transition hover:text-cream hover:bg-white/10 active:scale-95"
           >
             ✕
           </button>
@@ -145,13 +146,13 @@ export function ChatDuvidas({ onFechar }: Props) {
             maxLength={1000}
             placeholder={pensando ? txt.aguardeResposta : txt.escrevaDuvida}
             aria-label={txt.suaDuvida}
-            className="flex-1 min-w-0 px-4 py-2 rounded-full bg-black/30 border border-white/10 text-sm placeholder:text-white/30 focus:outline-none focus:border-accent2/60 disabled:opacity-50 transition"
+            className="flex-1 min-w-0 px-4 min-h-[44px] rounded-full bg-black/30 border border-edge text-sm placeholder:text-faint transition focus:border-accent2 disabled:opacity-50"
           />
           <button
             type="submit"
             disabled={!rascunho.trim() || pensando}
             aria-label={txt.enviar}
-            className="shrink-0 w-10 h-10 rounded-full bg-accent2 text-ink grid place-items-center hover:brightness-110 disabled:opacity-30 disabled:hover:brightness-100 transition"
+            className="shrink-0 w-11 h-11 rounded-full bg-accent2 text-ink grid place-items-center transition hover:brightness-110 active:scale-95 disabled:opacity-40 disabled:hover:brightness-100 disabled:active:scale-100"
           >
             <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor" aria-hidden="true">
               <path d="M3.4 20.4l17.5-8.4a1 1 0 000-1.8L3.4 1.8a.9.9 0 00-1.3 1l2.3 7.1a1 1 0 00.8.7l9.2 1.5-9.2 1.5a1 1 0 00-.8.7l-2.3 7.1a.9.9 0 001.3 1z" />
@@ -172,7 +173,7 @@ function Balao({ mensagem }: { mensagem: Mensagem }) {
     ? 'bg-accent2 text-ink rounded-br-md'
     : ehErro
       ? 'bg-accent/15 text-accent border border-accent/30 rounded-bl-md'
-      : 'bg-white/10 text-white/85 rounded-bl-md';
+      : 'bg-white/10 text-cream/90 rounded-bl-md';
 
   return (
     <div className={`flex ${daPessoa ? 'justify-end' : 'justify-start'}`}>
@@ -188,7 +189,7 @@ function Balao({ mensagem }: { mensagem: Mensagem }) {
 /** Três pontinhos enquanto a resposta não chega. */
 function Pensando() {
   return (
-    <div className="flex justify-start" aria-label={txt.escrevendoResposta}>
+    <div className="flex justify-start" role="status" aria-label={txt.escrevendoResposta}>
       <div className="bg-white/10 rounded-2xl rounded-bl-md px-4 py-3 flex gap-1.5">
         {[0, 150, 300].map((atraso) => (
           <span

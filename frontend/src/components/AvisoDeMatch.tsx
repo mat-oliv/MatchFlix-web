@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
 import { txt } from '../lib/idioma';
+import { useDialogo } from '../lib/useDialogo';
 import type { AvisoDeMatch as Match } from '../lib/useMatchesAoVivo';
 
 type Props = {
@@ -15,25 +15,33 @@ type Props = {
  * nesse instante pode estar na aba Grupos, no ranking ou parada no feed.
  *
  * Foge de propósito da convenção dos outros pop-ups em um ponto: o conteúdo interno
- * **não** faz `stopPropagation`. Aqui é comemoração, não diálogo — o texto diz para
- * tocar em qualquer lugar, então tocar no meio também tem de fechar.
+ * **não** faz `stopPropagation`. Aqui é comemoração, não diálogo — tocar no meio do
+ * pôster também fecha.
+ *
+ * O que mudou: tocar em qualquer lugar continua fechando, mas a frase que explicava
+ * isso virou um botão de verdade. Ela era a única instrução de saída e não era
+ * alcançável pelo teclado — quem não usa toque ficava com o Escape, que ninguém
+ * anuncia. Um botão diz a mesma coisa, é focável e some da tela do mesmo jeito.
  */
 export function AvisoDeMatch({ match, onFechar }: Props) {
-  useEffect(() => {
-    const aoTeclar = (e: KeyboardEvent) => e.key === 'Escape' && onFechar();
-    window.addEventListener('keydown', aoTeclar);
-    return () => window.removeEventListener('keydown', aoTeclar);
-  }, [onFechar]);
+  const painel = useDialogo(onFechar);
 
   return (
     <div
       className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center px-6"
-      role="alertdialog"
-      aria-modal="true"
       onClick={onFechar}
     >
-      <div className="text-center flex flex-col items-center">
-        <p className="font-display text-4xl text-amber-300 mb-4">{txt.deuMatch}</p>
+      <div
+        ref={painel}
+        tabIndex={-1}
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="match-titulo"
+        className="text-center flex flex-col items-center focus:outline-none"
+      >
+        <p id="match-titulo" className="font-display text-4xl text-amber-300 mb-4">
+          {txt.deuMatch}
+        </p>
 
         {match.posterUrl && (
           <img
@@ -43,13 +51,18 @@ export function AvisoDeMatch({ match, onFechar }: Props) {
           />
         )}
 
-        <p className="text-white/80">{txt.todosCurtiram(match.title)}</p>
+        <p className="text-cream">{txt.todosCurtiram(match.title)}</p>
         {/* O nome do grupo importa mais aqui do que importava antes: agora o aviso chega
             sem a pessoa ter acabado de votar, e quem está em vários grupos precisa saber
             de qual deles é o match. */}
-        <p className="text-white/50 text-sm mt-1">{txt.noGrupo(match.groupName)}</p>
+        <p className="text-muted text-sm mt-1">{txt.noGrupo(match.groupName)}</p>
 
-        <p className="text-white/40 text-sm mt-4">{txt.toqueParaContinuar}</p>
+        <button
+          onClick={onFechar}
+          className="mt-6 min-h-[44px] px-8 rounded-full bg-white/10 border border-edge font-semibold transition hover:bg-white/15 active:scale-95"
+        >
+          {txt.continuar}
+        </button>
       </div>
     </div>
   );

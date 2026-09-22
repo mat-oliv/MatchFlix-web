@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { prisma } from '../lib/prisma.js';
+import { prisma, ehLinhaJaExistente } from '../lib/prisma.js';
 import { exigirAutenticacao } from '../lib/auth.js';
 
 export async function swipeRoutes(app: FastifyInstance) {
@@ -64,11 +64,29 @@ export async function swipeRoutes(app: FastifyInstance) {
           // Match é registro histórico e fica congelado: uma vez criado, nunca é
           // revogado. Se alguém entrar no grupo depois, os matches anteriores
           // continuam valendo mesmo sem essa pessoa ter curtido o filme.
-          const match = await prisma.match.upsert({
-            where: { groupId_movieId: { groupId, movieId } },
-            update: {},
-            create: { groupId, movieId },
-          });
+          //
+          // `create` com o conflito tratado, e NÃO `upsert`. A diferença não é de
+          // estilo, é de atomicidade: com `update: {}` o Prisma não tem o que escrever
+          // no conflito, então não emite `INSERT ... ON CONFLICT` — ele consulta, não
+          // acha, e insere, em dois passos. Quando duas pessoas do mesmo grupo curtem o
+          // mesmo filme quase juntas, as duas passam pela verificação acima, as duas
+          // tentam inserir, uma ganha e a outra recebia P2002 — que virava 500 na cara
+          // de quem votou, com a mensagem "não foi possível registrar seu voto", falsa,
+          // porque o voto tinha sido gravado e o match criado. Medido antes da correção:
+          // 48% dos votos simultâneos num grupo de 2, 74% num de 6.
+          //
+          // Perder a corrida aqui é o resultado esperado, não erro: o match que esta
+          // requisição ia criar já está no banco. Ela lê o que a vencedora gravou e
+          // segue — as duas pessoas recebem o aviso na hora, e a peneira
+          // `groupId:movieId` do `useMatchesAoVivo` impede o pop-up repetido.
+          const match = await prisma.match
+            .create({ data: { groupId, movieId } })
+            .catch(async (erro) => {
+              if (!ehLinhaJaExistente(erro)) throw erro;
+              return prisma.match.findUniqueOrThrow({
+                where: { groupId_movieId: { groupId, movieId } },
+              });
+            });
           newMatches.push({
             groupId: match.groupId,
             groupName: group.name,

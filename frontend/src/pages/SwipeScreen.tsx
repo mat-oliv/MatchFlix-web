@@ -113,8 +113,14 @@ export function SwipeScreen({ onMatches }: Props) {
 
   if (!current) {
     return (
-      <div className="h-full flex items-center justify-center">
-        <p className="text-center text-white/60 px-6">{txt.carregandoFilmes}</p>
+      // `role="status"` avisa quem usa leitor de tela de que a tela está trabalhando.
+      // Sem ele, o feed vazio é silêncio: nada indica se está carregando ou se quebrou.
+      <div className="h-full flex flex-col items-center justify-center gap-3" role="status">
+        <span
+          aria-hidden="true"
+          className="w-8 h-8 rounded-full border-2 border-white/15 border-t-accent2 animate-spin"
+        />
+        <p className="text-center text-muted px-6">{txt.carregandoFilmes}</p>
       </div>
     );
   }
@@ -130,8 +136,16 @@ export function SwipeScreen({ onMatches }: Props) {
         />
       </div>
 
+      {/*
+        `role="alert"` faz o leitor de tela anunciar o problema na hora. Antes era um
+        parágrafo comum: a mensagem aparecia na tela e quem não a via seguia votando sem
+        saber que um voto tinha falhado.
+      */}
       {error && (
-        <p className="shrink-0 text-sm text-rose-300 bg-rose-500/10 border border-rose-400/30 rounded-full px-4 py-1.5">
+        <p
+          role="alert"
+          className="shrink-0 text-sm text-rose-300 bg-rose-500/10 border border-rose-400/40 rounded-full px-4 py-2"
+        >
           {error}
         </p>
       )}
