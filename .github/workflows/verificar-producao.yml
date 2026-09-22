@@ -1,0 +1,46 @@
+# Roda o `verify:prod` sozinho quando a Vercel termina um deploy de produção — é o passo 5
+# do pipeline, que prova que o que subiu funciona (build verde não prova nada aqui).
+#
+# A Vercel avisa o GitHub com um `deployment_status` por projeto. Só dois interessam: a
+# API e o site. Os projetos `-luq9` e `-9erc` também publicam e são ignorados.
+name: Verificar produção
+
+on: deployment_status
+
+# API e site publicam separados e cada um dispara isto. A execução mais nova cancela a
+# anterior, então a que sobra é a que roda com os dois no ar.
+concurrency:
+  group: verificar-producao
+  cancel-in-progress: true
+
+jobs:
+  verificar:
+    if: >-
+      github.event.deployment_status.state == 'success' &&
+      (github.event.deployment.environment == 'Production – match-flix-web' ||
+       github.event.deployment.environment == 'Production – match-flix-web-cyhd')
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      # O script importa `dotenv`; o postinstall (`prisma generate`) roda junto e é inofensivo.
+      - run: npm ci
+      # Dá tempo para o outro projeto terminar de publicar antes de conferir os dois.
+      - name: Espera API e site estabilizarem
+        run: sleep 90
+      - run: npm run verify:prod
+        env:
+          # Contas do seed; o grupo delas em produção só tem as duas.
+          VERIFY_USER_A: ${{ secrets.VERIFY_USER_A }}
+          VERIFY_PASS_A: ${{ secrets.VERIFY_PASS_A }}
+          VERIFY_USER_B: ${{ secrets.VERIFY_USER_B }}
+          VERIFY_PASS_B: ${{ secrets.VERIFY_PASS_B }}
+          # Para conferir a classificação de cada filme do feed direto na TMDB.
+          TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
