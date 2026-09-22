@@ -10,3 +10,42 @@ body {
 .font-display {
   font-family: 'Space Grotesk', sans-serif;
 }
+
+@layer base {
+  /*
+   * Diz ao navegador que a interface é escura. Sem isto, o seletor de arquivos, a barra
+   * de rolagem e o preenchimento automático do formulário nascem claros no meio de uma
+   * tela escura — o contraste do texto autopreenchido fica fora do nosso controle.
+   */
+  :root {
+    color-scheme: dark;
+  }
+
+  /*
+   * Anel de foco visível em tudo que recebe foco.
+   *
+   * Vários controles traziam `outline-none` com só a cor da borda mudando no foco —
+   * uma diferença de 1,9:1, invisível na prática. Quem navega por teclado perdia a
+   * referência de onde estava. `:focus-visible` mostra o anel para teclado e o mantém
+   * fora do caminho de quem usa o dedo ou o mouse.
+   */
+  :focus-visible {
+    @apply outline-none ring-2 ring-accent2 ring-offset-2 ring-offset-ink;
+  }
+
+  /*
+   * Respeita quem pediu menos movimento no sistema. Vale para os três pontinhos do
+   * chat, o `active:scale` dos botões e as transições — a informação nunca depende do
+   * movimento, então desligá-lo não tira nada.
+   */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}

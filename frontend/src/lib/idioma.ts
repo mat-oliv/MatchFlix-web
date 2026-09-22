@@ -24,11 +24,16 @@ const pt = {
   semPoster: 'Sem pôster',
   carregando: 'Carregando...',
   fechar: 'Fechar',
+  continuar: 'Continuar',
+  irParaConteudo: 'Ir para o conteúdo',
+  mensagensDaTela: 'Mensagens',
 
   // cabeçalho
   abaFilmes: 'Filmes',
   abaGrupos: 'Grupos',
   abrirChat: 'Abrir dúvidas sobre o aplicativo',
+  navegacaoPrincipal: 'Navegação principal',
+  suaConta: 'Sua conta',
 
   // entrada
   subtitulo: 'Descubra o filme que todo mundo do grupo quer ver.',
@@ -37,6 +42,8 @@ const pt = {
   usuario: 'Usuário',
   senha: 'Senha',
   confirmarSenha: 'Confirmar senha',
+  dicaUsuario: (min: number) => `Pelo menos ${min} caracteres, sem espaços.`,
+  dicaSenha: (min: number) => `Pelo menos ${min} caracteres.`,
   aguarde: 'Aguarde...',
   criarConta: 'Criar conta',
   naoTemConta: 'Não tem conta?',
@@ -58,13 +65,15 @@ const pt = {
   toqueParaDescricao: 'Toque para ver a descrição completa',
   passar: 'Passar',
   curtir: 'Curtir',
+  passarFilme: (titulo: string) => `Passar "${titulo}"`,
+  curtirFilme: (titulo: string) => `Curtir "${titulo}"`,
 
   // detalhes
   detalhesDe: (titulo: string) => `Detalhes de ${titulo}`,
   semDescricao: 'Este filme ainda não tem descrição em português.',
 
   // aviso
-  ops: 'Ops!',
+  ops: 'Não deu certo',
   entendi: 'Entendi',
 
   // grupos
@@ -87,6 +96,7 @@ const pt = {
   convite: 'Convite:',
   copiado: 'Copiado!',
   copiar: 'Copiar',
+  copiarCodigoDe: (nome: string) => `Copiar o código de convite do grupo "${nome}"`,
   nenhumMatch: 'Nenhum match ainda. Curtam filmes na aba Filmes!',
   verMembros: (nome: string) => `Ver quem está no grupo "${nome}"`,
   membrosDoGrupo: 'Membros do grupo',
@@ -150,11 +160,16 @@ const en: typeof pt = {
   semPoster: 'No poster',
   carregando: 'Loading...',
   fechar: 'Close',
+  continuar: 'Continue',
+  irParaConteudo: 'Skip to content',
+  mensagensDaTela: 'Messages',
 
   // cabeçalho
   abaFilmes: 'Movies',
   abaGrupos: 'Groups',
   abrirChat: 'Open help about the app',
+  navegacaoPrincipal: 'Main navigation',
+  suaConta: 'Your account',
 
   // entrada
   subtitulo: 'Find the movie everyone in the group wants to watch.',
@@ -163,6 +178,8 @@ const en: typeof pt = {
   usuario: 'Username',
   senha: 'Password',
   confirmarSenha: 'Confirm password',
+  dicaUsuario: (min: number) => `At least ${min} characters, no spaces.`,
+  dicaSenha: (min: number) => `At least ${min} characters.`,
   aguarde: 'Please wait...',
   criarConta: 'Create account',
   naoTemConta: "Don't have an account?",
@@ -184,13 +201,15 @@ const en: typeof pt = {
   toqueParaDescricao: 'Tap to see the full description',
   passar: 'Pass',
   curtir: 'Like',
+  passarFilme: (titulo: string) => `Pass on "${titulo}"`,
+  curtirFilme: (titulo: string) => `Like "${titulo}"`,
 
   // detalhes
   detalhesDe: (titulo: string) => `Details for ${titulo}`,
   semDescricao: 'This movie has no description yet.',
 
   // aviso
-  ops: 'Oops!',
+  ops: "That didn't work",
   entendi: 'Got it',
 
   // grupos
@@ -213,6 +232,7 @@ const en: typeof pt = {
   convite: 'Invite:',
   copiado: 'Copied!',
   copiar: 'Copy',
+  copiarCodigoDe: (nome: string) => `Copy the invite code for "${nome}"`,
   nenhumMatch: 'No matches yet. Like some movies in the Movies tab!',
   verMembros: (nome: string) => `See who is in the group "${nome}"`,
   membrosDoGrupo: 'Group members',

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { getMembrosDoGrupo, ApiError, type MembroDoGrupo, type UserGroup } from '../lib/api';
 import { lerSessao } from '../lib/session';
 import { txt } from '../lib/idioma';
+import { useDialogo } from '../lib/useDialogo';
 
 type Props = {
   grupo: UserGroup;
@@ -23,6 +24,9 @@ export function MembrosDoGrupo({ grupo, onFechar }: Props) {
   // a aba Grupos não recebe o usuário logado — ela só lida com grupos.
   const meuId = lerSessao()?.user.id;
 
+  // Escape, foco preso dentro do diálogo e foco devolvido à contagem de membros.
+  const painel = useDialogo(onFechar);
+
   useEffect(() => {
     let cancelado = false;
 
@@ -38,37 +42,32 @@ export function MembrosDoGrupo({ grupo, onFechar }: Props) {
     };
   }, [grupo.id]);
 
-  useEffect(() => {
-    const aoTeclar = (e: KeyboardEvent) => e.key === 'Escape' && onFechar();
-    window.addEventListener('keydown', aoTeclar);
-    return () => window.removeEventListener('keydown', aoTeclar);
-  }, [onFechar]);
-
   return (
     <div
       className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center px-4 py-8"
-      role="dialog"
-      aria-modal="true"
-      aria-label={txt.membrosDoGrupo}
       onClick={onFechar}
     >
       <div
-        className="bg-panel border border-white/10 rounded-2xl w-full max-w-sm max-h-full flex flex-col shadow-2xl shadow-black/50"
+        ref={painel}
+        tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-label={txt.membrosDoGrupo}
+        className="bg-panel border border-white/10 rounded-2xl w-full max-w-sm max-h-full flex flex-col shadow-2xl shadow-black/50 focus:outline-none"
         onClick={(e) => e.stopPropagation()}
       >
         <header className="flex items-start gap-4 p-5 border-b border-white/10">
           <div className="min-w-0 flex-1">
             <h2 className="font-display text-xl leading-tight truncate">{grupo.name}</h2>
-            <p className="text-sm text-white/50 mt-0.5">
+            <p className="text-sm text-muted mt-0.5">
               {grupo.memberCount} {txt.membros(grupo.memberCount)}
             </p>
           </div>
 
           <button
-            autoFocus
             onClick={onFechar}
             aria-label={txt.fechar}
-            className="shrink-0 w-8 h-8 rounded-full text-white/50 hover:text-white hover:bg-white/10 transition"
+            className="shrink-0 w-11 h-11 grid place-items-center rounded-full text-muted transition hover:text-cream hover:bg-white/10 active:scale-95"
           >
             ✕
           </button>
@@ -77,9 +76,13 @@ export function MembrosDoGrupo({ grupo, onFechar }: Props) {
         {/* Só a lista rola: o cabeçalho fica à vista mesmo em grupo cheio. */}
         <div className="p-5 overflow-y-auto">
           {erro ? (
-            <p className="text-sm text-rose-300">{erro}</p>
+            <p role="alert" className="text-sm text-rose-300">
+              {erro}
+            </p>
           ) : membros === null ? (
-            <p className="text-sm text-white/40">{txt.carregando}</p>
+            <p role="status" className="text-sm text-muted">
+              {txt.carregando}
+            </p>
           ) : (
             <ul className="flex flex-col gap-3">
               {membros.map((membro) => (
@@ -99,7 +102,7 @@ export function MembrosDoGrupo({ grupo, onFechar }: Props) {
                   <span className="min-w-0 truncate">
                     {membro.username}
                     {membro.id === meuId && (
-                      <span className="text-white/40 text-sm"> ({txt.euMesmo})</span>
+                      <span className="text-muted text-sm"> ({txt.euMesmo})</span>
                     )}
                   </span>
                 </li>

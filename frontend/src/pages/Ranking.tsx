@@ -37,14 +37,18 @@ export function Ranking() {
   return (
     <div className="max-w-lg mx-auto py-10">
       <h2 className="font-display text-lg">{txt.rankingTitulo}</h2>
-      <p className="text-sm text-white/40 mb-6">{txt.rankingSubtitulo(dias)}</p>
+      <p className="text-sm text-muted mb-6">{txt.rankingSubtitulo(dias)}</p>
 
       {erro ? (
-        <p className="text-sm text-rose-300">{erro}</p>
+        <p role="alert" className="text-sm text-rose-300">
+          {erro}
+        </p>
       ) : filmes === null ? (
-        <p className="text-sm text-white/40">{txt.carregando}</p>
+        <p role="status" className="text-sm text-muted">
+          {txt.carregando}
+        </p>
       ) : filmes.length === 0 ? (
-        <p className="text-sm text-white/40">{txt.rankingVazio}</p>
+        <p className="text-sm text-muted">{txt.rankingVazio}</p>
       ) : (
         <ol className="flex flex-col gap-3">
           {filmes.map((filme, posicao) => (
@@ -53,7 +57,7 @@ export function Ranking() {
               className="flex items-center gap-4 rounded-2xl bg-panel border border-white/10 p-3"
             >
               {/* Tabular-nums para os números não dançarem de linha em linha. */}
-              <span className="w-7 shrink-0 text-center font-display text-lg tabular-nums text-white/40">
+              <span className="w-7 shrink-0 text-center font-display text-lg tabular-nums text-muted">
                 {posicao + 1}
               </span>
 
@@ -72,7 +76,7 @@ export function Ranking() {
 
               <p className="shrink-0 text-sm text-accent2 tabular-nums">
                 {filme.likeCount}{' '}
-                <span className="text-white/40">{txt.curtidas(filme.likeCount)}</span>
+                <span className="text-muted">{txt.curtidas(filme.likeCount)}</span>
               </p>
             </li>
           ))}

@@ -32,7 +32,7 @@ export function MovieCard({ movie, onLike, onDislike, onAbrirDetalhes }: Props) 
               className="w-full h-full object-cover transition group-hover:brightness-110"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-white/40">
+            <div className="w-full h-full flex items-center justify-center text-muted">
               {txt.semPoster}
             </div>
           )}
@@ -40,24 +40,55 @@ export function MovieCard({ movie, onLike, onDislike, onAbrirDetalhes }: Props) 
 
         <div className="shrink-0 w-full px-4 pt-3">
           <h2 className="font-display text-lg leading-tight mb-1">{movie.title}</h2>
-          <p className="text-sm text-white/60 line-clamp-2">{movie.overview}</p>
-          <p className="text-xs text-accent2/70 mt-1 group-hover:text-accent2 transition">
+          <p className="text-sm text-muted line-clamp-2">{movie.overview}</p>
+          <p className="text-xs text-accent2 mt-1 group-hover:brightness-110 transition">
             {txt.toqueParaDescricao}
           </p>
         </div>
       </button>
 
       <div className="shrink-0 flex gap-3 p-4">
+        {/*
+          Os dois botões têm o mesmo tamanho e estilos diferentes, que é o que
+          `buttons.md › Best practices` recomenda para um par de opções: "Use style —
+          not size — to visually distinguish the preferred choice". Curtir é o
+          proeminente; Passar fica contornado.
+
+          O rótulo de acessibilidade diz de QUAL filme se trata. Numa pilha de cards,
+          "Curtir" sozinho não informa nada a quem não vê a tela — e o card já trocou
+          quando o leitor de tela terminaria de ler a tela inteira.
+
+          O ícone acompanha o texto em vez de substituí-lo: `accessibility.md › Vision`
+          pede que nada seja transmitido só por cor, e vermelho-contra-verde é
+          justamente o par que mais gente confunde.
+        */}
         <button
           onClick={onDislike}
-          className="flex-1 py-2.5 rounded-full bg-white/5 border border-rose-400/40 text-rose-300 font-medium hover:bg-rose-400/10 transition"
+          aria-label={txt.passarFilme(movie.title)}
+          className="flex-1 min-h-[52px] flex items-center justify-center gap-2 rounded-full bg-white/5 border border-rose-400/60 text-rose-300 font-medium transition hover:bg-rose-400/10 active:scale-95"
         >
+          <svg
+            viewBox="0 0 24 24"
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            aria-hidden="true"
+          >
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
           {txt.passar}
         </button>
+
         <button
           onClick={onLike}
-          className="flex-1 py-2.5 rounded-full bg-accent2 text-ink font-semibold hover:brightness-110 transition"
+          aria-label={txt.curtirFilme(movie.title)}
+          className="flex-1 min-h-[52px] flex items-center justify-center gap-2 rounded-full bg-accent2 text-ink font-semibold transition hover:brightness-110 active:scale-95"
         >
+          <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor" aria-hidden="true">
+            <path d="M12 20.3l-1.3-1.2C6 14.9 3.2 12.3 3.2 9.1 3.2 6.6 5.2 4.6 7.7 4.6c1.4 0 2.8.7 3.7 1.8l.6.7.6-.7c.9-1.1 2.3-1.8 3.7-1.8 2.5 0 4.5 2 4.5 4.5 0 3.2-2.8 5.8-7.5 10l-1.3 1.2z" />
+          </svg>
           {txt.curtir}
         </button>
       </div>

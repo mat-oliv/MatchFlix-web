@@ -16,6 +16,11 @@ type Props = {
   sinalDeAtualizacao: number;
 };
 
+// Mesma razão do formulário de entrada: `border-white/10` dava 1,35:1 contra o fundo e
+// o campo não tinha limite visível. Ver `Auth.tsx`.
+const CAMPO =
+  'w-full px-4 min-h-[44px] rounded-full bg-white/5 border border-edge mb-2 transition focus:border-accent2';
+
 export function Groups({ sinalDeAtualizacao }: Props) {
   const [groupName, setGroupName] = useState('');
   const [inviteCode, setInviteCode] = useState('');
@@ -83,59 +88,82 @@ export function Groups({ sinalDeAtualizacao }: Props) {
     <div className="max-w-lg mx-auto py-10 flex flex-col gap-10">
       <div className="flex flex-col gap-8 sm:flex-row">
         <div className="flex-1">
-          <h2 className="font-display text-lg mb-2">{txt.criarGrupo}</h2>
+          {/* O <h2> vira o rótulo do campo: é a mesma frase, e repeti-la logo abaixo
+              seria ruído para quem usa leitor de tela. */}
+          <label htmlFor="nome-do-grupo" className="block font-display text-lg mb-2">
+            {txt.criarGrupo}
+          </label>
           <input
+            id="nome-do-grupo"
             value={groupName}
             onChange={(e) => setGroupName(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
             placeholder={txt.nomeDoGrupo}
-            className="w-full px-4 py-2 rounded-full bg-white/5 border border-white/10 mb-2 outline-none focus:border-accent2"
+            className={CAMPO}
           />
           <button
             onClick={handleCreate}
-            className="w-full py-2 rounded-full bg-accent2 text-ink font-semibold hover:brightness-110 transition"
+            className="w-full min-h-[44px] rounded-full bg-accent2 text-ink font-semibold transition hover:brightness-110 active:scale-[0.98]"
           >
             {txt.criar}
           </button>
         </div>
 
         <div className="flex-1">
-          <h2 className="font-display text-lg mb-2">{txt.entrarEmGrupo}</h2>
+          <label htmlFor="codigo-de-convite" className="block font-display text-lg mb-2">
+            {txt.entrarEmGrupo}
+          </label>
           <input
+            id="codigo-de-convite"
             value={inviteCode}
             onChange={(e) => setInviteCode(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleJoin()}
             placeholder={txt.codigoConvite}
-            className="w-full px-4 py-2 rounded-full bg-white/5 border border-white/10 mb-2 outline-none focus:border-accent2"
+            autoCapitalize="none"
+            autoCorrect="off"
+            className={CAMPO}
           />
           <button
             onClick={handleJoin}
-            className="w-full py-2 rounded-full bg-white/10 border border-white/20 font-semibold hover:bg-white/15 transition"
+            className="w-full min-h-[44px] rounded-full bg-white/10 border border-edge font-semibold transition hover:bg-white/15 active:scale-[0.98]"
           >
             {txt.entrarNoGrupo}
           </button>
         </div>
       </div>
 
-      {message && <p className="text-center text-accent2 text-sm">{message}</p>}
-      {error && <p className="text-center text-rose-300 text-sm">{error}</p>}
+      {/*
+        As duas confirmações aparecem longe do botão que as causou e sumiam em silêncio
+        para quem não vê a tela. `role="status"` anuncia o sucesso sem interromper;
+        `role="alert"` interrompe, que é o certo para erro.
+      */}
+      {message && (
+        <p role="status" className="text-center text-accent2 text-sm">
+          {message}
+        </p>
+      )}
+      {error && (
+        <p role="alert" className="text-center text-rose-300 text-sm">
+          {error}
+        </p>
+      )}
 
       <section>
         <h2 className="font-display text-lg mb-4">{txt.meusGrupos}</h2>
 
         {carregando ? (
-          <p className="text-white/50 text-sm">{txt.carregando}</p>
-        ) : grupos.length === 0 ? (
-          <p className="text-white/50 text-sm">
-            {txt.semGrupos}
+          <p role="status" className="text-muted text-sm">
+            {txt.carregando}
           </p>
+        ) : grupos.length === 0 ? (
+          <p className="text-muted text-sm">{txt.semGrupos}</p>
         ) : (
           <div className="flex flex-col gap-4">
             {grupos.map((grupo) => (
               <article key={grupo.id} className="rounded-2xl bg-panel border border-white/10 p-5">
                 <header className="flex items-baseline justify-between gap-3 mb-3">
                   <h3 className="font-display text-xl">{grupo.name}</h3>
-                  <p className="text-sm text-white/50 shrink-0">
+                  <p className="text-sm text-muted shrink-0">
                     {/* A contagem de membros abre a janela com a foto e o nome de cada um.
                         Sublinhado pontilhado porque, sem ele, ninguém adivinha que dá
                         pra clicar num texto no meio do cabeçalho. */}
@@ -143,7 +171,7 @@ export function Groups({ sinalDeAtualizacao }: Props) {
                       onClick={() => setGrupoDosMembros(grupo)}
                       aria-haspopup="dialog"
                       aria-label={txt.verMembros(grupo.name)}
-                      className="underline decoration-dotted underline-offset-4 hover:text-white transition"
+                      className="min-h-[44px] px-1 underline decoration-dotted underline-offset-4 hover:text-cream transition"
                     >
                       {grupo.memberCount} {txt.membros(grupo.memberCount)}
                     </button>{' '}
@@ -152,24 +180,33 @@ export function Groups({ sinalDeAtualizacao }: Props) {
                 </header>
 
                 <div className="flex items-center gap-2 mb-4">
-                  <span className="text-xs text-white/40 shrink-0">{txt.convite}</span>
+                  <span className="text-xs text-faint shrink-0">{txt.convite}</span>
                   <code className="font-mono tracking-widest text-sm text-accent2 bg-black/30 rounded-full px-3 py-2">
                     {grupo.inviteCode}
                   </code>
+                  {/* O rótulo diz de que grupo é o código: numa lista de vários grupos,
+                      três botões "Copiar" seguidos são indistinguíveis no leitor de tela. */}
                   <button
                     onClick={() => copiarConvite(grupo.inviteCode)}
-                    className="shrink-0 text-xs px-3 py-2 rounded-full bg-white/10 border border-white/20 hover:bg-white/15 transition"
+                    aria-label={txt.copiarCodigoDe(grupo.name)}
+                    className="shrink-0 text-xs px-3 min-h-[44px] rounded-full bg-white/10 border border-edge transition hover:bg-white/15 active:scale-95"
                   >
                     {copiado === grupo.inviteCode ? txt.copiado : txt.copiar}
                   </button>
                 </div>
 
                 {grupo.matches.length === 0 ? (
-                  <p className="text-sm text-white/40">
-                    {txt.nenhumMatch}
-                  </p>
+                  <p className="text-sm text-muted">{txt.nenhumMatch}</p>
                 ) : (
-                  <div className="flex gap-3 overflow-x-auto pb-1">
+                  /* `tabIndex` porque a fileira rola na horizontal: sem ele, quem não
+                     usa mouse nem toque não alcança os pôsteres que ficaram fora da
+                     área visível. */
+                  <div
+                    role="group"
+                    aria-label={txt.partidas(grupo.matchCount)}
+                    tabIndex={0}
+                    className="flex gap-3 overflow-x-auto pb-1 rounded-lg"
+                  >
                     {grupo.matches.map((match) => (
                       <figure key={match.movieId} className="w-24 shrink-0">
                         <div className="aspect-[2/3] rounded-lg overflow-hidden bg-black/30 mb-1">
@@ -180,12 +217,12 @@ export function Groups({ sinalDeAtualizacao }: Props) {
                               className="w-full h-full object-cover"
                             />
                           ) : (
-                            <div className="w-full h-full flex items-center justify-center text-[10px] text-white/40 text-center px-1">
+                            <div className="w-full h-full flex items-center justify-center text-[10px] text-muted text-center px-1">
                               {txt.semPoster}
                             </div>
                           )}
                         </div>
-                        <figcaption className="text-[11px] text-white/70 leading-tight line-clamp-2">
+                        <figcaption className="text-xs text-cream/90 leading-tight line-clamp-2">
                           {match.title}
                         </figcaption>
                       </figure>
