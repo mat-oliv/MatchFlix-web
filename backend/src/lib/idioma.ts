@@ -21,6 +21,10 @@ export function idiomaDaRequisicao(request: FastifyRequest): Idioma {
 
 const pt = {
   // auth
+  // erros gerais — ver o setErrorHandler em `index.ts`
+  erroInesperado: 'Algo deu errado do nosso lado. Tente de novo em instantes.',
+  requisicaoInvalida: 'Requisição inválida.',
+
   preenchaCadastro: 'Preencha usuário, senha e confirmação.',
   informeUsuario: 'Informe um nome de usuário.',
   usuarioCurto: (min: number) => `O usuário precisa ter pelo menos ${min} caracteres.`,
@@ -63,6 +67,10 @@ const pt = {
  */
 const en: typeof pt = {
   // auth
+  // erros gerais — ver o setErrorHandler em `index.ts`
+  erroInesperado: 'Something went wrong on our end. Try again in a moment.',
+  requisicaoInvalida: 'Invalid request.',
+
   preenchaCadastro: 'Fill in username, password and confirmation.',
   informeUsuario: 'Enter a username.',
   usuarioCurto: (min: number) => `The username must be at least ${min} characters long.`,
