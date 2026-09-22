@@ -83,14 +83,22 @@ export function SwipeScreen({ onMatches }: Props) {
 
   const current = movies[index];
 
-  async function handleSwipe(liked: boolean) {
-    if (!current) return;
-    const votado = current;
+  /**
+   * Fase da troca de card.
+   *
+   * `saindo` é o intervalo em que o filme votado ainda está na tela, encolhendo. É por
+   * isso que o índice não avança mais no clique: se avançasse, o card já seria o
+   * próximo filme e a animação de saída mostraria o filme errado encolhendo.
+   */
+  const [fase, setFase] = useState<'parado' | 'saindo'>('parado');
 
-    // Avança o card na hora: registrar o swipe é assíncrono e não pode travar a
-    // navegação se a requisição falhar.
-    setIndex((i) => i + 1);
-    if (index + 3 >= movies.length) carregarMais();
+  /**
+   * Grava o voto e anuncia o match que ele fechou.
+   *
+   * Separado do gesto de propósito: a requisição parte no instante do clique e corre
+   * em paralelo com a animação. Animação nenhuma pode atrasar a gravação de um voto.
+   */
+  async function registrarVoto(votado: Movie, liked: boolean) {
     setError(null);
 
     try {
@@ -111,6 +119,32 @@ export function SwipeScreen({ onMatches }: Props) {
     }
   }
 
+  function handleSwipe(liked: boolean) {
+    // Um segundo toque enquanto o card encolhe votaria no MESMO filme de novo: ele
+    // ainda está na tela, mas já foi decidido.
+    if (!current || fase === 'saindo') return;
+
+    void registrarVoto(current, liked);
+    if (index + 3 >= movies.length) carregarMais();
+    setFase('saindo');
+  }
+
+  /**
+   * Fim do encolhimento: aqui, e só aqui, o filme troca.
+   *
+   * Usar o `animationend` em vez de um `setTimeout` evita manter a duração escrita em
+   * dois lugares — e faz a coisa certa sozinho quando o sistema pede menos movimento:
+   * a regra do `index.css` zera a duração, o evento dispara de imediato e a troca sai
+   * instantânea, sem pausa morta.
+   */
+  function aoTerminarAnimacao(evento: React.AnimationEvent<HTMLDivElement>) {
+    if (evento.target !== evento.currentTarget) return; // animação de algum filho
+    if (fase !== 'saindo') return; // foi a de entrada, que não troca nada
+
+    setIndex((i) => i + 1);
+    setFase('parado');
+  }
+
   if (!current) {
     return (
       // `role="status"` avisa quem usa leitor de tela de que a tela está trabalhando.
@@ -128,12 +162,32 @@ export function SwipeScreen({ onMatches }: Props) {
   return (
     <div className="h-full flex flex-col items-center gap-2 py-3">
       <div className="flex-1 min-h-0 w-full flex justify-center">
-        <MovieCard
-          movie={current}
-          onLike={() => handleSwipe(true)}
-          onDislike={() => handleSwipe(false)}
-          onAbrirDetalhes={() => setDetalhes(current)}
-        />
+        {/*
+          O `key` é o que faz a entrada acontecer: ao trocar de filme o React remonta
+          este nó, e animação de CSS roda sozinha no mount. Sem o `key`, só o conteúdo
+          mudaria dentro do mesmo elemento e nada animaria.
+
+          O tamanho do card não muda — quem escala é este invólucro, e só enquanto a
+          animação roda. Em repouso ele fica em `scale(1)`.
+        */}
+        <div
+          key={current.id}
+          onAnimationEnd={aoTerminarAnimacao}
+          className={`w-full max-w-sm h-full ${
+            fase === 'saindo'
+              ? // `pointer-events-none`: enquanto encolhe, o card não aceita mais toque.
+                // Sem isso dava para abrir a descrição de um filme já votado.
+                'animate-encolher-ao-centro pointer-events-none'
+              : 'animate-surgir-do-centro'
+          }`}
+        >
+          <MovieCard
+            movie={current}
+            onLike={() => handleSwipe(true)}
+            onDislike={() => handleSwipe(false)}
+            onAbrirDetalhes={() => setDetalhes(current)}
+          />
+        </div>
       </div>
 
       {/*
