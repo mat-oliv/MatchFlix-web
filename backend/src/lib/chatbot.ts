@@ -60,6 +60,9 @@ COMO FUNCIONA
   entrar no grupo depois não apaga matches antigos.
 - Menu do usuário (canto superior direito): foto de perfil, quantos grupos e quantos
   filmes curtidos, e a lista dos filmes curtidos.
+- O app mede, de forma anônima, quanto tempo o site fica em uso, para estatística geral.
+  Esse tempo não fica ligado à conta: o servidor não sabe de quem é. Não há como ver o
+  próprio tempo de uso na tela.
 
 O QUE NÃO EXISTE (nunca diga que existe, nunca ensine a fazer)
 - Não há como sair de um grupo, nem remover alguém, nem apagar um grupo.

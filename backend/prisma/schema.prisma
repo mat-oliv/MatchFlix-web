@@ -84,3 +84,26 @@ model Match {
   // por data.
   @@index([groupId, createdAt])
 }
+
+// Tempo de uso do site, ANÔNIMO. Não existe relação com `User`, e isso é a regra inteira:
+// nenhuma linha diz de quem é o tempo.
+//
+// Uma linha é um período de uso contínuo de uma aba. O `pseudonimo` é um valor aleatório
+// que o NAVEGADOR sorteia para cada conta e guarda só para si — o servidor nunca recebe a
+// ligação entre ele e a conta. Ele existe para agrupar as sessões "da mesma pessoa" e
+// permitir variância e desvio padrão por pessoa, em vez de uma média de sessões soltas.
+//
+// Limite conhecido: a mesma pessoa em dois aparelhos vira dois pseudônimos. É o preço de
+// o servidor não saber quem é quem.
+model SessaoDeUso {
+  // Sorteado pela aba (UUID). Nasce no primeiro sinal.
+  id          String   @id
+  pseudonimo  String
+  inicio      DateTime @default(now())
+  ultimoSinal DateTime @default(now())
+  // Só o tempo entre sinais consecutivos próximos — ver `routes/uso.ts`.
+  segundos    Int      @default(0)
+
+  // A estatística agrupa por pessoa: `GROUP BY pseudonimo`.
+  @@index([pseudonimo])
+}
