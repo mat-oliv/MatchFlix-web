@@ -1,0 +1,71 @@
+# Portões de integração: rodam em todo PR e em todo push no master, ANTES de a Vercel
+# publicar. Nada aqui usa segredo de produção — o banco é um Postgres descartável que
+# nasce e morre com o job.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: moviematch
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/moviematch
+      DIRECT_URL: postgresql://ci:ci@localhost:5432/moviematch
+      AUTH_SECRET: segredo-so-do-ci
+      LOG_LEVEL: silent
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      # O postinstall já roda `prisma generate`.
+      - run: npm ci
+      - run: npm run typecheck
+      # Aplica todas as migrations num banco zerado — pega migration quebrada antes
+      # que ela reprove o build da Vercel.
+      - run: npm run migrate:deploy
+      # Build + portões de entrypoint da Vercel (export default, import do fastify).
+      - run: npm run verify:vercel
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    env:
+      VITE_API_URL: https://match-flix-web-bixao.vercel.app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      # tsc + vite: o tsc é quem pega prop faltando e chave faltando nos dicionários.
+      - run: npm run build
