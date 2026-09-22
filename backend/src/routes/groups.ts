@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { nanoid } from 'nanoid';
-import { prisma } from '../lib/prisma.js';
+import { prisma, ehLinhaJaExistente } from '../lib/prisma.js';
 import { enriquecerFilmes, fetchMovieById } from '../lib/tmdb.js';
 import { exigirAutenticacao } from '../lib/auth.js';
 import { idiomaDaRequisicao, textos, textosDe } from '../lib/idioma.js';
@@ -42,11 +42,18 @@ export async function groupRoutes(app: FastifyInstance) {
     const group = await prisma.group.findUnique({ where: { inviteCode } });
     if (!group) return reply.status(404).send({ error: textos(request).conviteNaoEncontrado });
 
-    await prisma.groupMember.upsert({
-      where: { groupId_userId: { groupId: group.id, userId } },
-      update: {},
-      create: { groupId: group.id, userId },
-    });
+    // Mesma correção do match, mesma causa: `upsert` com `update` vazio consulta e
+    // insere em dois passos. Dois toques seguidos no botão "Entrar" (ou uma rede lenta
+    // que faz a pessoa insistir) mandavam duas requisições, e a segunda respondia 500
+    // embora a pessoa já estivesse no grupo. Medido: 4 de 5 cliques simultâneos.
+    //
+    // Já estar no grupo é exatamente o que se queria: não há o que corrigir nem o que
+    // avisar.
+    await prisma.groupMember
+      .create({ data: { groupId: group.id, userId } })
+      .catch((erro) => {
+        if (!ehLinhaJaExistente(erro)) throw erro;
+      });
 
     return reply.send(group);
   });
