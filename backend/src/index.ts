@@ -2,12 +2,14 @@ import 'dotenv/config';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
+import { ZodError } from 'zod';
 import { authRoutes } from './routes/auth.js';
 import { groupRoutes } from './routes/groups.js';
 import { movieRoutes } from './routes/movies.js';
 import { profileRoutes } from './routes/profile.js';
 import { swipeRoutes } from './routes/swipes.js';
 import { chatRoutes } from './routes/chat.js';
+import { textos } from './lib/idioma.js';
 
 // Entrada da Vercel. Lá a API não é um processo escutando porta: o runtime carrega este
 // arquivo e chama o `export default` a cada requisição. Quem sobe servidor de verdade é
@@ -52,6 +54,45 @@ export async function construirApp() {
 
   // Preenchido pelo preHandler exigirAutenticacao nas rotas protegidas.
   app.decorateRequest('userId', '');
+
+  /**
+   * Tratador de erro de toda a API.
+   *
+   * O padrão do Fastify devolve ao navegador a mensagem crua da exceção. Numa falha do
+   * Prisma isso significava mandar para fora o CAMINHO ABSOLUTO do arquivo no servidor,
+   * o trecho de código em volta da linha que quebrou e os nomes das colunas do schema —
+   * de graça, para quem só precisava mandar um corpo inválido. Além do vazamento, o
+   * `error` do corpo padrão é a frase em inglês "Internal Server Error", que o
+   * `lib/api.ts` do site exibe como está: erro em inglês no meio da tela em português.
+   *
+   * A regra aqui: o motivo real fica no log do servidor, e o navegador recebe uma frase
+   * genérica no idioma da requisição.
+   */
+  app.setErrorHandler((erro, request, reply) => {
+    const t = textos(request);
+
+    // Corpo ou query fora do formato. É erro de quem chamou, não do servidor — e hoje
+    // virava 500, porque as rotas usam `.parse()`, que lança. O detalhe do Zod fica no
+    // log: ele nomeia os campos do schema, que é justamente o que não deve sair daqui.
+    if (erro instanceof ZodError) {
+      request.log.info({ err: erro }, 'requisição rejeitada pelo schema');
+      return reply.status(400).send({ error: t.requisicaoInvalida });
+    }
+
+    const status = erro.statusCode ?? 500;
+
+    // 4xx que o próprio Fastify levanta (JSON malformado, corpo grande demais) já vêm
+    // com mensagem curta e segura, e ela ajuda quem está integrando.
+    if (status < 500) {
+      return reply.status(status).send({ error: erro.message });
+    }
+
+    // `err` é a única chave que o pino serializa como Error — com qualquer outro nome
+    // sai `{}` e o motivo real some do log, que foi o que já escondeu um 404 de modelo
+    // aposentado do Gemini por uma sessão inteira.
+    request.log.error({ err: erro }, 'erro não tratado');
+    return reply.status(500).send({ error: t.erroInesperado });
+  });
 
   await app.register(cors, { origin: origensPermitidas() });
 
