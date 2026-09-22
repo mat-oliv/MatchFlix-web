@@ -7,18 +7,20 @@ name: Verificar produção
 
 on: deployment_status
 
-# API e site publicam separados e cada um dispara isto. A execução mais nova cancela a
-# anterior, então a que sobra é a que roda com os dois no ar.
-concurrency:
-  group: verificar-producao
-  cancel-in-progress: true
-
 jobs:
   verificar:
     if: >-
       github.event.deployment_status.state == 'success' &&
       (github.event.deployment.environment == 'Production – match-flix-web' ||
        github.event.deployment.environment == 'Production – match-flix-web-cyhd')
+    # API e site publicam separados e cada um dispara isto; a execução mais nova cancela a
+    # anterior, e a que sobra roda com os dois no ar. Tem que ficar NO JOB, depois do `if`:
+    # no nível do workflow, os eventos ignorados (`-luq9`, `-9erc`, estados pendentes)
+    # também entravam no grupo e cancelavam a verificação de verdade — foi o que aconteceu
+    # no primeiro deploy com este workflow, que terminou sem nenhuma execução completa.
+    concurrency:
+      group: verificar-producao
+      cancel-in-progress: true
     runs-on: ubuntu-latest
     defaults:
       run:
