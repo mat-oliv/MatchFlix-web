@@ -147,12 +147,19 @@ if (!grupo) {
 }
 
 // Um filme que as duas contas ainda não votaram — senão o match já existe e o teste
-// passa sem provar nada.
-const curtidosA = new Set((await api('/me/liked', { token: a.token })).movies.map((m) => m.movieId));
-const candidatos = [27205, 155, 680, 13, 550, 278, 238, 424, 129, 497];
-const filme = candidatos.find((id) => !curtidosA.has(id));
+// passa sem provar nada. O feed esconde tudo em que a conta já votou, então um filme
+// presente no feed das duas, na mesma página, é inédito para ambas. Uma lista fixa de
+// candidatos acabava: cada verificação consome um filme dela.
+let filme;
+for (let page = 1; page <= 500 && !filme; page += 7) {
+  const [deA, deB] = await Promise.all(
+    [a, b].map((c) => api(`/movies/feed?page=${page}`, { token: c.token }))
+  );
+  const idsB = new Set(deB.movies.map((m) => m.id));
+  filme = deA.movies.find((m) => idsB.has(m.id))?.id;
+}
 if (!filme) {
-  nok('as contas de verificação já curtiram todos os filmes candidatos — acrescente outros à lista');
+  nok('nenhum filme inédito para as duas contas de verificação no feed');
 } else {
   const base = await api('/me/matches', { token: a.token });
   base.matches.length === 0 && base.now ? ok('/me/matches responde e fixa o marco') : nok('/me/matches fora do esperado');
