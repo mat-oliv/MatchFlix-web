@@ -6,12 +6,28 @@ import { Auth } from './pages/Auth';
 import { MenuUsuario } from './components/MenuUsuario';
 import { ChatDuvidas } from './components/ChatDuvidas';
 import { AvisoDeMatch } from './components/AvisoDeMatch';
+import { Tutorial } from './components/Tutorial';
 import { useMatchesAoVivo } from './lib/useMatchesAoVivo';
 import { txt } from './lib/idioma';
 import { getMeuPerfil } from './lib/api';
 import { lerSessao, limparSessao, type Sessao } from './lib/session';
 
 type Aba = 'swipe' | 'groups' | 'ranking';
+
+/**
+ * Marca de "tour pendente", por conta. Gravada no cadastro e apagada quando o tour acaba
+ * ou é pulado — assim recarregar a página no meio do tour o retoma, e quem só faz login
+ * nunca o vê.
+ */
+const chaveDoTour = (userId: string) => `moviematch:tour-pendente:${userId}`;
+
+function tourPendente(userId: string) {
+  try {
+    return localStorage.getItem(chaveDoTour(userId)) === '1';
+  } catch {
+    return false;
+  }
+}
 
 /**
  * As três abas, numa lista só.
@@ -32,6 +48,12 @@ export default function App() {
   const [menuAberto, setMenuAberto] = useState(false);
   const [chatAberto, setChatAberto] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+
+  // Tour de boas-vindas e os dois sinais que ele acompanha: o grupo criado e os votos.
+  const [emTour, setEmTour] = useState(() => (sessao ? tourPendente(sessao.user.id) : false));
+  const [grupoDoTour, setGrupoDoTour] = useState<string | null>(null);
+  const [votos, setVotos] = useState(0);
+  const [alvoDoTour, setAlvoDoTour] = useState<string | null>(null);
 
   /*
    * Devolve o foco ao botão do chat quando a conversa fecha.
@@ -70,12 +92,40 @@ export default function App() {
     };
   }, [sessao]);
 
-  if (!sessao) return <Auth onEntrar={setSessao} />;
+  if (!sessao) {
+    return (
+      <Auth
+        onEntrar={(nova, novaConta) => {
+          if (novaConta) {
+            try {
+              localStorage.setItem(chaveDoTour(nova.user.id), '1');
+            } catch {
+              // Sem storage o tour ainda roda nesta visita; só não sobrevive a um reload.
+            }
+          }
+          setTab('swipe');
+          setEmTour(novaConta);
+          setSessao(nova);
+        }}
+      />
+    );
+  }
+
+  function encerrarTour() {
+    try {
+      localStorage.removeItem(chaveDoTour(sessao!.user.id));
+    } catch {
+      // Sem storage não há marca para apagar.
+    }
+    setEmTour(false);
+    setAlvoDoTour(null);
+  }
 
   function sair() {
     limparSessao();
     setSessao(null);
     setMenuAberto(false);
+    setEmTour(false);
     // Sem isso a foto de quem saiu apareceria pro próximo login, até o perfil carregar.
     setAvatarUrl(null);
   }
@@ -89,6 +139,7 @@ export default function App() {
 
     return (
       <button
+        data-tour={`aba-${aba.id}`}
         onClick={() => setTab(aba.id)}
         aria-current={ativa ? 'page' : undefined}
         className={
@@ -164,8 +215,16 @@ export default function App() {
         tabIndex={-1}
         className={`flex-1 min-h-0 px-4 focus:outline-none ${tab === 'swipe' ? '' : 'overflow-y-auto'}`}
       >
-        {tab === 'swipe' && <SwipeScreen onMatches={anunciar} />}
-        {tab === 'groups' && <Groups sinalDeAtualizacao={versao} />}
+        {tab === 'swipe' && (
+          <SwipeScreen onMatches={anunciar} onVotou={() => setVotos((n) => n + 1)} />
+        )}
+        {tab === 'groups' && (
+          <Groups
+            sinalDeAtualizacao={versao}
+            onGrupoCriado={setGrupoDoTour}
+            grupoDoTour={grupoDoTour}
+          />
+        )}
         {/* Monta só quando aberta: a busca do ranking mora no efeito do componente,
             então quem nunca entra aqui nunca dispara a requisição. */}
         {tab === 'ranking' && <Ranking />}
@@ -202,9 +261,12 @@ export default function App() {
       {/* Some enquanto a conversa está aberta: o painel nasce por cima dele, e deixá-lo
           embaixo da sobreposição só daria um botão visível que não responde ao clique.
           No celular sobe acima da barra de abas, que ocupa a faixa de baixo. */}
-      {!chatAberto && (
+      {/* Durante o tour o botão só aparece no passo que fala dele: no celular ele flutua
+          por cima da aba Grupos e cobria justamente o que o tour estava destacando. */}
+      {!chatAberto && (!emTour || alvoDoTour === 'botao-chat') && (
         <button
           ref={botaoChat}
+          data-tour="botao-chat"
           onClick={() => setChatAberto(true)}
           aria-haspopup="dialog"
           aria-label={txt.abrirChat}
@@ -228,6 +290,16 @@ export default function App() {
       )}
 
       {chatAberto && <ChatDuvidas onFechar={() => setChatAberto(false)} />}
+
+      {emTour && (
+        <Tutorial
+          tab={tab}
+          grupoCriado={grupoDoTour}
+          votos={votos}
+          onMudarAlvo={setAlvoDoTour}
+          onFim={encerrarTour}
+        />
+      )}
     </div>
   );
 }

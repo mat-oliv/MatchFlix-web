@@ -144,6 +144,50 @@ const pt = {
   escrevendoResposta: 'Escrevendo a resposta',
   erroAssistente: 'Não consegui falar com o assistente agora.',
 
+  // tour de boas-vindas
+  tutPasso: (n: number, total: number) => `${n} de ${total}`,
+  tutPular: 'Pular tour',
+  tutComecar: 'Começar',
+  tutProximo: 'Próximo',
+  tutConcluir: 'Começar a votar',
+  tutBoasVindasTitulo: 'Boas-vindas ao MovieMatch!',
+  tutBoasVindas:
+    'Em um minuto você cria seu primeiro grupo e vota no primeiro filme. Vamos lá?',
+  tutAbaGruposTitulo: 'Tudo começa num grupo',
+  tutAbaGrupos: 'O match acontece entre as pessoas de um grupo. Toque em Grupos.',
+  tutCriarTitulo: 'Crie seu grupo',
+  tutCriar:
+    'Escolha um nome — a turma da faculdade, a família, o casal — e toque em Criar.',
+  tutMatchesTitulo: 'Aqui aparecem os matches',
+  tutMatches:
+    'Quando todo mundo do grupo curtir o mesmo filme, ele entra nesta fileira. E você ' +
+    'recebe um aviso na hora, em qualquer aba.',
+  tutConviteTitulo: 'Este é o código do grupo',
+  tutConvite:
+    'É a chave de entrada: quem tiver o código entra no grupo. Toque em Copiar e mande ' +
+    'pros seus amigos.',
+  tutMembrosTitulo: 'Quem está no grupo',
+  tutMembros:
+    'Toque aqui para ver a foto e o nome de cada membro. Por enquanto é só você — o ' +
+    'match precisa de pelo menos duas pessoas.',
+  tutEntrarTitulo: 'Recebeu um código?',
+  tutEntrar: 'É aqui que você cola o código de um amigo para entrar no grupo dele.',
+  tutAbaFilmesTitulo: 'Agora, os filmes',
+  tutAbaFilmes: 'Toque em Filmes para começar a votar.',
+  tutCardTitulo: 'Curtir ou passar',
+  tutCard:
+    'Toparia assistir? Toque em Curtir. Não? Toque em Passar. Tocar no pôster mostra a ' +
+    'sinopse. Vote neste filme para continuar.',
+  tutComoMatchTitulo: 'Quando rola um match? 🎬',
+  tutComoMatch:
+    'Quando o grupo tem 2 pessoas ou mais e TODO MUNDO curte o mesmo filme, dá match! ' +
+    'O aviso aparece na tela de todos na hora. Aí não tem mais discussão: é o filme ' +
+    'que vocês vão assistir juntos!',
+  tutFimTitulo: 'Tudo pronto!',
+  tutFim:
+    'Cada filme aparece uma vez só, então vote sem medo. Ficou com dúvida? Este botão ' +
+    'abre o assistente.',
+
   // camada de rede
   semServidor: 'Não foi possível falar com o servidor. Ele está rodando?',
   operacaoFalhou: 'Não foi possível completar a operação.',
@@ -279,6 +323,48 @@ const en: typeof pt = {
   enviar: 'Send',
   escrevendoResposta: 'Writing the answer',
   erroAssistente: "I couldn't reach the assistant right now.",
+
+  // tour de boas-vindas
+  tutPasso: (n: number, total: number) => `${n} of ${total}`,
+  tutPular: 'Skip tour',
+  tutComecar: 'Start',
+  tutProximo: 'Next',
+  tutConcluir: 'Start voting',
+  tutBoasVindasTitulo: 'Welcome to MovieMatch!',
+  tutBoasVindas: "In a minute you'll create your first group and vote on your first movie. Ready?",
+  tutAbaGruposTitulo: 'It all starts with a group',
+  tutAbaGrupos: 'Matches happen between the people in a group. Tap Groups.',
+  tutCriarTitulo: 'Create your group',
+  tutCriar: 'Pick a name — your college crew, your family, your partner — and tap Create.',
+  tutMatchesTitulo: 'Your matches show up here',
+  tutMatches:
+    'When everyone in the group likes the same movie, it lands in this row. You also ' +
+    'get a heads-up right away, whatever tab you are on.',
+  tutConviteTitulo: "This is the group's code",
+  tutConvite:
+    'It is the key to get in: anyone with the code can join the group. Tap Copy and ' +
+    'send it to your friends.',
+  tutMembrosTitulo: "Who's in the group",
+  tutMembros:
+    "Tap here to see each member's photo and name. For now it's just you — a match " +
+    'needs at least two people.',
+  tutEntrarTitulo: 'Got a code?',
+  tutEntrar: "This is where you paste a friend's code to join their group.",
+  tutAbaFilmesTitulo: 'Now, the movies',
+  tutAbaFilmes: 'Tap Movies to start voting.',
+  tutCardTitulo: 'Like or pass',
+  tutCard:
+    "Would you watch it? Tap Like. Not really? Tap Pass. Tapping the poster shows the " +
+    'synopsis. Vote on this movie to continue.',
+  tutComoMatchTitulo: 'When is it a match? 🎬',
+  tutComoMatch:
+    'When the group has 2 or more people and EVERYONE likes the same movie, it is a ' +
+    'match! Everyone gets a heads-up right away. No more arguing: that is the movie ' +
+    'you are watching together!',
+  tutFimTitulo: "You're all set!",
+  tutFim:
+    'Each movie shows up only once, so vote freely. Got a question? This button opens ' +
+    'the assistant.',
 
   // camada de rede
   semServidor: 'Could not reach the server. Is it running?',
