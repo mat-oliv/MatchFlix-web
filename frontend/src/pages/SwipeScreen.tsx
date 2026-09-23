@@ -24,9 +24,11 @@ type Props = {
    * pessoa do grupo — e o pop-up tem de ser um só, com uma peneira de repetidos só.
    */
   onMatches: (matches: AvisoDeMatch[]) => void;
+  /** Avisa a cada voto — é assim que o tour de boas-vindas sabe que a pessoa votou. */
+  onVotou?: () => void;
 };
 
-export function SwipeScreen({ onMatches }: Props) {
+export function SwipeScreen({ onMatches, onVotou }: Props) {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [index, setIndex] = useState(0);
   // Guarda o filme inteiro, não um booleano: assim o pop-up mostra o que foi aberto
@@ -125,6 +127,7 @@ export function SwipeScreen({ onMatches }: Props) {
     if (!current || fase === 'saindo') return;
 
     void registrarVoto(current, liked);
+    onVotou?.();
     if (index + 3 >= movies.length) carregarMais();
     setFase('saindo');
   }
@@ -172,6 +175,7 @@ export function SwipeScreen({ onMatches }: Props) {
         */}
         <div
           key={current.id}
+          data-tour="card-filme"
           onAnimationEnd={aoTerminarAnimacao}
           className={`w-full max-w-sm h-full ${
             fase === 'saindo'

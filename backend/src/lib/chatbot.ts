@@ -35,6 +35,10 @@ avisa quando todo mundo do grupo curtiu o mesmo filme.
 
 COMO FUNCIONA
 - Entrar: cadastro e login com usuário e senha. A sessão dura 7 dias.
+- Logo depois do cadastro, um tour rápido guia a pessoa: criar o primeiro grupo, onde
+  aparecem os matches, o código de convite, a lista de membros, onde entrar num grupo e
+  o primeiro voto, e termina explicando quando um match acontece. Pode ser pulado.
+  Aparece uma vez só e não há como abri-lo de novo.
 - Aba "Filmes": o feed traz filmes populares da TMDB. Curtir ou descartar.
   Tocar no card abre a descrição completa, o ano e a nota.
 - O feed não mostra filme adulto: entram só os classificados até 16 anos pela DJCTQ.

@@ -15,7 +15,12 @@ type Modo = 'login' | 'cadastro';
 const USUARIO_MIN = 3;
 const SENHA_MIN = 6;
 
-export function Auth({ onEntrar }: { onEntrar: (sessao: Sessao) => void }) {
+type Props = {
+  /** `novaConta` diz se a pessoa acabou de se cadastrar — é quem ganha o tour. */
+  onEntrar: (sessao: Sessao, novaConta: boolean) => void;
+};
+
+export function Auth({ onEntrar }: Props) {
   const [modo, setModo] = useState<Modo>('login');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -43,7 +48,7 @@ export function Auth({ onEntrar }: { onEntrar: (sessao: Sessao) => void }) {
           : await cadastrar(username, password, confirmPassword);
 
       salvarSessao(sessao);
-      onEntrar(sessao);
+      onEntrar(sessao, modo === 'cadastro');
     } catch (err) {
       setErro(err instanceof ApiError ? err.message : txt.algoDeuErrado);
     } finally {
