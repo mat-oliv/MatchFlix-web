@@ -9,6 +9,7 @@ import { movieRoutes } from './routes/movies.js';
 import { profileRoutes } from './routes/profile.js';
 import { swipeRoutes } from './routes/swipes.js';
 import { chatRoutes } from './routes/chat.js';
+import { usoRoutes } from './routes/uso.js';
 import { textos } from './lib/idioma.js';
 
 // Entrada da Vercel. Lá a API não é um processo escutando porta: o runtime carrega este
@@ -102,6 +103,7 @@ export async function construirApp() {
   await app.register(movieRoutes);
   await app.register(swipeRoutes);
   await app.register(chatRoutes);
+  await app.register(usoRoutes);
 
   app.get('/health', async () => ({ status: 'ok' }));
 

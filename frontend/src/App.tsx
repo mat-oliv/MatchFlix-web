@@ -8,6 +8,7 @@ import { ChatDuvidas } from './components/ChatDuvidas';
 import { AvisoDeMatch } from './components/AvisoDeMatch';
 import { Tutorial } from './components/Tutorial';
 import { useMatchesAoVivo } from './lib/useMatchesAoVivo';
+import { useTempoDeUso } from './lib/useTempoDeUso';
 import { txt } from './lib/idioma';
 import { getMeuPerfil } from './lib/api';
 import { lerSessao, limparSessao, type Sessao } from './lib/session';
@@ -75,6 +76,10 @@ export default function App() {
   // Precisa ficar aqui em cima, e não na aba Filmes: quem curtiu primeiro só descobre o
   // match quando o outro membro vota, e nesse momento pode estar em qualquer aba.
   const { aviso, dispensar, anunciar, versao } = useMatchesAoVivo(sessao?.user.id ?? null);
+
+  // Tempo de uso anônimo — o id da conta só serve para escolher o pseudônimo guardado
+  // neste navegador; o sinal leva o pseudônimo, não o id. Ver `useTempoDeUso`.
+  useTempoDeUso(sessao?.user.id ?? null);
 
   // A miniatura do cabeçalho é a mesma foto do menu, mas o cabeçalho aparece antes de
   // o menu ser aberto alguma vez — por isso o App busca o perfil por conta própria.
