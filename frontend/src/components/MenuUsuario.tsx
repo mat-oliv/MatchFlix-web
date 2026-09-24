@@ -7,6 +7,7 @@ import {
   type FilmeResumo,
   type Perfil,
 } from '../lib/api';
+import { CreditoTmdb } from './CreditoTmdb';
 import { txt } from '../lib/idioma';
 import { useDialogo } from '../lib/useDialogo';
 
@@ -315,6 +316,7 @@ export function MenuUsuario({ onFechar, onSair, onFotoAtualizada }: Props) {
           >
             {txt.sairDaConta}
           </button>
+          <CreditoTmdb className="mt-4" />
         </footer>
       </div>
     </div>

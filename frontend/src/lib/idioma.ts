@@ -124,6 +124,10 @@ const pt = {
   tentarDeNovo: 'Tentar de novo',
   carregandoMais: 'Carregando mais...',
   sairDaConta: 'Sair da conta',
+
+  // crédito exigido pelos termos da API da TMDB
+  creditoTmdbAntes: 'Dados e imagens de filmes fornecidos pelo ',
+  creditoTmdbAviso: 'Este produto usa a API da TMDB, mas não é endossado nem certificado pela TMDB.',
   erroPerfil: 'Não foi possível carregar seu perfil.',
   erroMaisFilmes: 'Não foi possível carregar mais filmes.',
   erroSalvarFoto: 'Não foi possível salvar a foto.',
@@ -304,6 +308,10 @@ const en: typeof pt = {
   tentarDeNovo: 'Try again',
   carregandoMais: 'Loading more...',
   sairDaConta: 'Sign out',
+
+  // crédito exigido pelos termos da API da TMDB
+  creditoTmdbAntes: 'Movie data and images provided by ',
+  creditoTmdbAviso: 'This product uses the TMDB API but is not endorsed or certified by TMDB.',
   erroPerfil: 'Could not load your profile.',
   erroMaisFilmes: 'Could not load more movies.',
   erroSalvarFoto: 'Could not save the photo.',
