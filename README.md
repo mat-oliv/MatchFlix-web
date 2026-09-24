@@ -1,4 +1,4 @@
-# MovieMatch
+# MatchFlix
 
 > "Tinder para filmes em grupo": cada pessoa dá like ou dislike nos filmes no seu ritmo, e
 > quando **todo mundo do grupo** curte o mesmo título, é match. Acaba a discussão de "o que

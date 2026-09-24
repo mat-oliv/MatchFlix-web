@@ -66,7 +66,7 @@ export function Auth({ onEntrar }: Props) {
   return (
     <div className="min-h-dvh flex items-center justify-center px-6 py-10">
       <div className="w-full max-w-sm">
-        <h1 className="font-display text-4xl text-center mb-1">MovieMatch</h1>
+        <h1 className="font-display text-4xl text-center mb-1">MatchFlix</h1>
         <p className="text-center text-muted text-sm mb-8">{txt.subtitulo}</p>
 
         <div className="flex gap-1 p-1 rounded-full bg-white/5 border border-white/10 mb-6">
