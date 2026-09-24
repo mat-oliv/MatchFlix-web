@@ -21,7 +21,7 @@ jobs:
         env:
           POSTGRES_USER: ci
           POSTGRES_PASSWORD: ci
-          POSTGRES_DB: moviematch
+          POSTGRES_DB: matchflix
         ports: ['5432:5432']
         options: >-
           --health-cmd pg_isready
@@ -30,8 +30,8 @@ jobs:
           --health-retries 10
 
     env:
-      DATABASE_URL: postgresql://ci:ci@localhost:5432/moviematch
-      DIRECT_URL: postgresql://ci:ci@localhost:5432/moviematch
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/matchflix
+      DIRECT_URL: postgresql://ci:ci@localhost:5432/matchflix
       AUTH_SECRET: segredo-so-do-ci
       LOG_LEVEL: silent
 

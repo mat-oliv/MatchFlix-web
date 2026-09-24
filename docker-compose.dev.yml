@@ -3,22 +3,22 @@
 #
 # É um arquivo completo, não um override — rode um OU outro, nunca os dois juntos.
 
-name: movie-match
+name: matchflix
 
 services:
   db:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-moviematch}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-moviematch}
-      POSTGRES_DB: ${POSTGRES_DB:-moviematch}
+      POSTGRES_USER: ${POSTGRES_USER:-matchflix}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-matchflix}
+      POSTGRES_DB: ${POSTGRES_DB:-matchflix}
     ports:
       - "${DB_PORT:-5432}:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-moviematch} -d ${POSTGRES_DB:-moviematch}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-matchflix} -d ${POSTGRES_DB:-matchflix}"]
       interval: 5s
       timeout: 5s
       retries: 12
@@ -28,10 +28,10 @@ services:
       context: ./backend
       target: dev
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-moviematch}:${POSTGRES_PASSWORD:-moviematch}@db:5432/${POSTGRES_DB:-moviematch}?schema=public
+      DATABASE_URL: postgresql://${POSTGRES_USER:-matchflix}:${POSTGRES_PASSWORD:-matchflix}@db:5432/${POSTGRES_DB:-matchflix}?schema=public
       # Sem pgbouncer aqui: mesma conexão para migrations e aplicação. O schema exige
       # a variável de qualquer forma (ver prisma/schema.prisma).
-      DIRECT_URL: postgresql://${POSTGRES_USER:-moviematch}:${POSTGRES_PASSWORD:-moviematch}@db:5432/${POSTGRES_DB:-moviematch}?schema=public
+      DIRECT_URL: postgresql://${POSTGRES_USER:-matchflix}:${POSTGRES_PASSWORD:-matchflix}@db:5432/${POSTGRES_DB:-matchflix}?schema=public
       TMDB_API_KEY: ${TMDB_API_KEY:?defina TMDB_API_KEY no arquivo .env da raiz}
       AUTH_SECRET: ${AUTH_SECRET:?defina AUTH_SECRET no arquivo .env da raiz}
       CORS_ORIGIN: ${CORS_ORIGIN:-}

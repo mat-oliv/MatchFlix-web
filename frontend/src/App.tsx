@@ -19,7 +19,7 @@ type Aba = 'swipe' | 'groups' | 'ranking';
  * ou é pulado — assim recarregar a página no meio do tour o retoma, e quem só faz login
  * nunca o vê.
  */
-const chaveDoTour = (userId: string) => `moviematch:tour-pendente:${userId}`;
+const chaveDoTour = (userId: string) => `matchflix:tour-pendente:${userId}`;
 
 function tourPendente(userId: string) {
   try {
@@ -173,7 +173,7 @@ export default function App() {
       </a>
 
       <header className="shrink-0 flex items-center justify-between gap-3 px-4 sm:px-6 py-3 border-b border-white/10">
-        <h1 className="font-display text-2xl">MovieMatch</h1>
+        <h1 className="font-display text-2xl">MatchFlix</h1>
 
         <div className="flex items-center gap-2">
           {/* No celular esta fileira some: as abas moram na barra de baixo, ao alcance

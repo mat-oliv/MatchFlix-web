@@ -1,4 +1,20 @@
-const CHAVE = 'moviematch:sessao';
+const CHAVE = 'matchflix:sessao';
+
+/**
+ * Chave do tempo em que o app se chamava MovieMatch. Quem já estava logado tem a sessão
+ * gravada nela; sem a mudança abaixo, a troca de nome deslogaria todo mundo de uma vez.
+ */
+const CHAVE_ANTIGA = 'moviematch:sessao';
+
+for (const store of [sessionStorage, localStorage]) {
+  try {
+    const antiga = store.getItem(CHAVE_ANTIGA);
+    if (antiga !== null && store.getItem(CHAVE) === null) store.setItem(CHAVE, antiga);
+    store.removeItem(CHAVE_ANTIGA);
+  } catch {
+    // Sem storage não há sessão antiga para trazer.
+  }
+}
 
 export type Usuario = { id: string; username: string };
 export type Sessao = { token: string; user: Usuario };

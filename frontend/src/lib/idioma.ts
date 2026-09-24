@@ -135,7 +135,7 @@ const pt = {
   chatTitulo: 'Dúvidas sobre o app',
   chatSubtitulo: 'Respostas de um assistente — pode errar',
   chatBoasVindas:
-    'Oi! Por aqui você tira dúvidas sobre o MovieMatch — como montar um grupo, como o ' +
+    'Oi! Por aqui você tira dúvidas sobre o MatchFlix — como montar um grupo, como o ' +
     'match acontece, o que aparece no feed. Pergunte à vontade.',
   escrevaDuvida: 'Escreva sua dúvida…',
   aguardeResposta: 'Aguarde a resposta…',
@@ -150,7 +150,7 @@ const pt = {
   tutComecar: 'Começar',
   tutProximo: 'Próximo',
   tutConcluir: 'Começar a votar',
-  tutBoasVindasTitulo: 'Boas-vindas ao MovieMatch!',
+  tutBoasVindasTitulo: 'Boas-vindas ao MatchFlix!',
   tutBoasVindas:
     'Em um minuto você cria seu primeiro grupo e vota no primeiro filme. Vamos lá?',
   tutAbaGruposTitulo: 'Tudo começa num grupo',
@@ -315,7 +315,7 @@ const en: typeof pt = {
   chatTitulo: 'App help',
   chatSubtitulo: 'Answers from an assistant — it can be wrong',
   chatBoasVindas:
-    'Hi! Ask me anything about MovieMatch — how to set up a group, how a match happens, ' +
+    'Hi! Ask me anything about MatchFlix — how to set up a group, how a match happens, ' +
     'what shows up in the feed.',
   escrevaDuvida: 'Type your question…',
   aguardeResposta: 'Waiting for the answer…',
@@ -330,7 +330,7 @@ const en: typeof pt = {
   tutComecar: 'Start',
   tutProximo: 'Next',
   tutConcluir: 'Start voting',
-  tutBoasVindasTitulo: 'Welcome to MovieMatch!',
+  tutBoasVindasTitulo: 'Welcome to MatchFlix!',
   tutBoasVindas: "In a minute you'll create your first group and vote on your first movie. Ready?",
   tutAbaGruposTitulo: 'It all starts with a group',
   tutAbaGrupos: 'Matches happen between the people in a group. Tap Groups.',
