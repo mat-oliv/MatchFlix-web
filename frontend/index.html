@@ -10,6 +10,28 @@
          PNG tem fundo cheio, sem o raio que o SVG da aba tem. -->
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="theme-color" content="#1b1523" />
+
+    <!--
+      Prévia do link (WhatsApp, Instagram, X, LinkedIn). Quem lê isto é o robô de cada
+      rede, que NÃO executa JavaScript — por isso fica no HTML fixo, em português (é o
+      público da divulgação), mesmo com o site mudando de idioma em tempo de execução.
+      A imagem precisa de URL absoluta e de ficar bem abaixo de 300 KB, senão o WhatsApp
+      mostra a prévia sem ela. O WhatsApp guarda a prévia de cada link por dias: mudou
+      algo aqui, teste com um endereço novo (ex.: `?v=2`) em vez do de sempre.
+    -->
+    <meta name="description" content="Crie um grupo, cada um curte ou passa os filmes, e quando todo mundo curte o mesmo, dá match. Grátis." />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="MatchFlix" />
+    <meta property="og:locale" content="pt_BR" />
+    <meta property="og:url" content="https://matchflix-app.vercel.app/" />
+    <meta property="og:title" content="MatchFlix — escolham o filme juntos" />
+    <meta property="og:description" content="Crie um grupo, cada um curte ou passa os filmes, e quando todo mundo curte o mesmo, dá match. Grátis." />
+    <meta property="og:image" content="https://matchflix-app.vercel.app/og-image.jpg" />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Logo do MatchFlix e cartas de filme com o selo MATCH!" />
+    <meta name="twitter:card" content="summary_large_image" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
