@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { entrar, cadastrar, ApiError } from '../lib/api';
 import { salvarSessao, type Sessao } from '../lib/session';
 import { Aviso } from '../components/Aviso';
+import { CreditoTmdb } from '../components/CreditoTmdb';
 import { txt } from '../lib/idioma';
 
 type Modo = 'login' | 'cadastro';
@@ -185,6 +186,8 @@ export function Auth({ onEntrar }: Props) {
             </>
           )}
         </p>
+
+        <CreditoTmdb className="mt-10" />
       </div>
 
       {erro && <Aviso mensagem={erro} onFechar={() => setErro(null)} />}
