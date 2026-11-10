@@ -39,6 +39,9 @@ async function pedir<T>(path: string, init?: RequestInit): Promise<T> {
     throw new ApiError(corpo?.error ?? txt.operacaoFalhou);
   }
 
+  // 204 não tem corpo, e o `res.json()` quebraria tentando ler um.
+  if (res.status === 204) return undefined as T;
+
   return res.json();
 }
 
@@ -211,4 +214,22 @@ export type FalaDoChat = { autor: 'pessoa' | 'assistente'; texto: string };
  */
 export function perguntarAoAssistente(conversa: FalaDoChat[]): Promise<{ resposta: string }> {
   return pedir('/chat', { method: 'POST', body: JSON.stringify({ conversa }) });
+}
+
+// --- tempo de uso (anônimo) ---
+
+/**
+ * `final` é o sinal mandado quando a aba é escondida ou fechada. O `keepalive` deixa a
+ * requisição terminar mesmo que a página esteja sendo descarregada.
+ */
+export function enviarSinalDeUso(
+  sessao: string,
+  pseudonimo: string,
+  { final = false } = {}
+): Promise<void> {
+  return pedir('/uso/sinal', {
+    method: 'POST',
+    body: JSON.stringify({ sessao, pseudonimo }),
+    keepalive: final,
+  });
 }
