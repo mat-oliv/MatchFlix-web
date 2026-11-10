@@ -33,6 +33,14 @@ export function Groups({ sinalDeAtualizacao, onGrupoCriado, grupoDoTour }: Props
   const [inviteCode, setInviteCode] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  /*
+   * Erro de criar grupo, separado do `error` geral porque aparece DENTRO do bloco de
+   * criar. No tour esse bloco é o único trecho aceso da tela: um erro desenhado mais
+   * abaixo ficava no escuro, debaixo do balão, e o "Criar" parecia simplesmente não
+   * responder.
+   */
+  const [erroAoCriar, setErroAoCriar] = useState('');
+  const [criando, setCriando] = useState(false);
   const [grupos, setGrupos] = useState<UserGroup[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [copiado, setCopiado] = useState<string | null>(null);
@@ -56,8 +64,16 @@ export function Groups({ sinalDeAtualizacao, onGrupoCriado, grupoDoTour }: Props
   }, [carregarGrupos, sinalDeAtualizacao]);
 
   async function handleCreate() {
-    if (!groupName.trim()) return;
+    if (criando) return; // Enter repetido criaria o mesmo grupo duas vezes.
+    // Nome vazio não some em silêncio: no tour, um toque em "Criar" que não faz nada
+    // deixava a pessoa sem saída além de pular.
+    if (!groupName.trim()) {
+      setErroAoCriar(txt.nomeDoGrupoVazio);
+      return;
+    }
     setError('');
+    setErroAoCriar('');
+    setCriando(true);
     try {
       const group = await createGroup(groupName.trim());
       setMessage(txt.grupoCriado(group.name));
@@ -67,7 +83,9 @@ export function Groups({ sinalDeAtualizacao, onGrupoCriado, grupoDoTour }: Props
       // que precisa já estar na tela.
       onGrupoCriado?.(group.id);
     } catch (err) {
-      setError(mensagemDoErro(err, txt.erroCriarGrupo));
+      setErroAoCriar(mensagemDoErro(err, txt.erroCriarGrupo));
+    } finally {
+      setCriando(false);
     }
   }
 
@@ -111,12 +129,21 @@ export function Groups({ sinalDeAtualizacao, onGrupoCriado, grupoDoTour }: Props
             placeholder={txt.nomeDoGrupo}
             className={CAMPO}
           />
+          {/* Ocupado enquanto cria: com o servidor lento, o toque não mostrava reação
+              nenhuma por segundos. */}
           <button
             onClick={handleCreate}
-            className="w-full min-h-[44px] rounded-full bg-accent2 text-ink font-semibold transition hover:brightness-110 active:scale-[0.98]"
+            disabled={criando}
+            aria-busy={criando}
+            className="w-full min-h-[44px] rounded-full bg-accent2 text-ink font-semibold transition hover:brightness-110 active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100"
           >
-            {txt.criar}
+            {criando ? txt.criando : txt.criar}
           </button>
+          {erroAoCriar && (
+            <p role="alert" className="text-sm text-rose-300 mt-2 px-4">
+              {erroAoCriar}
+            </p>
+          )}
         </div>
 
         <div className="flex-1" data-tour="entrar-em-grupo">

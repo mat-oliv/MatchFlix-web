@@ -134,13 +134,16 @@ export function Tutorial({ tab, grupoCriado, votos, onMudarAlvo, onFim }: Props)
     }
 
     let quadro = 0;
-    let achou = false;
+    // O elemento, e não um "já achei": no passo de votar o alvo começa sendo o espaço de
+    // carregamento do feed e depois vira o card. Quando o elemento troca, a rolagem e o
+    // foco têm de ir para o novo — senão o teclado fica parado num spinner que sumiu.
+    let anterior: HTMLElement | null = null;
 
     const medir = () => {
       const el = acharAlvo(nome);
 
-      if (el && !achou) {
-        achou = true;
+      if (el && el !== anterior) {
+        anterior = el;
         const reduzir = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         el.scrollIntoView({ block: 'center', behavior: reduzir ? 'auto' : 'smooth' });
 
@@ -250,7 +253,7 @@ export function Tutorial({ tab, grupoCriado, votos, onMudarAlvo, onFim }: Props)
           {!ultimo ? (
             <button
               onClick={onFim}
-              className="min-h-[44px] px-2 text-sm text-muted hover:text-cream transition"
+              className="shrink-0 whitespace-nowrap min-h-[44px] px-2 text-sm text-muted hover:text-cream transition"
             >
               {txt.tutPular}
             </button>
@@ -258,8 +261,20 @@ export function Tutorial({ tab, grupoCriado, votos, onMudarAlvo, onFim }: Props)
             <span />
           )}
 
-          {/* Nos passos interativos não há "Próximo": quem avança é a própria ação. */}
-          {!passo.espera && (
+          {/*
+            Nos passos interativos não há "Próximo": quem avança é a própria ação. Mas o
+            lugar do botão não pode ficar vazio — com "Pular tour" sozinho no balão, ele
+            parecia o único caminho e quem testava pulava achando que era o "Próximo".
+          */}
+          {passo.espera ? (
+            <p className="flex items-center gap-2 text-xs text-accent2 text-right">
+              <span
+                aria-hidden="true"
+                className="w-2 h-2 shrink-0 rounded-full bg-accent2 animate-pulse motion-reduce:animate-none"
+              />
+              {txt.tutAvancaSozinho}
+            </p>
+          ) : (
             <button
               ref={botaoPrincipal}
               onClick={avancar}

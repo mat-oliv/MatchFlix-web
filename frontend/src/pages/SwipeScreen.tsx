@@ -35,6 +35,10 @@ export function SwipeScreen({ onMatches, onVotou }: Props) {
   // mesmo que o card debaixo mude.
   const [detalhes, setDetalhes] = useState<Movie | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Falha ao BUSCAR filmes — diferente de um voto que falhou. Sem card na tela, é ela que
+  // troca o spinner pela mensagem e pelo "Tentar de novo"; antes o spinner girava para
+  // sempre e ninguém sabia que tinha quebrado.
+  const [feedFalhou, setFeedFalhou] = useState(false);
 
   // Cursor devolvido pelo backend. Fica em ref porque não afeta a renderização e
   // não pode disparar novo efeito.
@@ -46,6 +50,7 @@ export function SwipeScreen({ onMatches, onVotou }: Props) {
   const carregarMais = useCallback(async () => {
     if (buscando.current) return;
     buscando.current = true;
+    setFeedFalhou(false);
 
     try {
       // Resposta vazia NÃO é fim de feed: quer dizer que as páginas varridas nesta
@@ -72,6 +77,7 @@ export function SwipeScreen({ onMatches, onVotou }: Props) {
       reagendar.current = window.setTimeout(carregarMais, ESPERA_NOVA_VARREDURA_MS);
     } catch {
       setError(txt.erroCarregarFilmes);
+      setFeedFalhou(true);
     } finally {
       buscando.current = false;
     }
@@ -149,10 +155,37 @@ export function SwipeScreen({ onMatches, onVotou }: Props) {
   }
 
   if (!current) {
+    if (feedFalhou) {
+      return (
+        <div data-tour="card-filme" className="h-full flex flex-col items-center justify-center gap-4">
+          <p role="alert" className="text-center text-rose-300 px-6">
+            {txt.erroCarregarFilmes}
+          </p>
+          <button
+            onClick={() => {
+              setError(null);
+              void carregarMais();
+            }}
+            className="min-h-[44px] px-5 rounded-full bg-white/10 border border-edge font-semibold transition hover:bg-white/15 active:scale-[0.98]"
+          >
+            {txt.tentarDeNovo}
+          </button>
+        </div>
+      );
+    }
+
     return (
       // `role="status"` avisa quem usa leitor de tela de que a tela está trabalhando.
       // Sem ele, o feed vazio é silêncio: nada indica se está carregando ou se quebrou.
-      <div className="h-full flex flex-col items-center justify-center gap-3" role="status">
+      //
+      // O `data-tour` é o mesmo do card: no passo de votar do tour, quem está na tela é
+      // este espaço. Sem alvo, o tour escurecia tudo — spinner incluído — e o balão
+      // mandava tocar em "Curtir" com só o "Pular" à mão.
+      <div
+        data-tour="card-filme"
+        className="h-full flex flex-col items-center justify-center gap-3"
+        role="status"
+      >
         <span
           aria-hidden="true"
           className="w-8 h-8 rounded-full border-2 border-white/15 border-t-accent2 animate-spin"

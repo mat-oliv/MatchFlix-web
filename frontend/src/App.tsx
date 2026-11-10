@@ -215,9 +215,16 @@ export default function App() {
         tabIndex={-1}
         className={`flex-1 min-h-0 px-4 focus:outline-none ${tab === 'swipe' ? '' : 'overflow-y-auto'}`}
       >
-        {tab === 'swipe' && (
+        {/*
+          Filmes fica montada nas outras abas, só escondida. Desmontar jogava fora o feed
+          a cada troca de aba e a volta começava do zero, com spinner — e no tour isso
+          caía bem no passo de votar, que vem logo depois da aba Grupos: em produção a
+          pessoa ficava segundos diante de um balão mandando tocar em "Curtir" sem card
+          nenhum na tela. `hidden` também tira o card da ordem do Tab e do leitor de tela.
+        */}
+        <div className={tab === 'swipe' ? 'h-full' : 'hidden'}>
           <SwipeScreen onMatches={anunciar} onVotou={() => setVotos((n) => n + 1)} />
-        )}
+        </div>
         {tab === 'groups' && (
           <Groups
             sinalDeAtualizacao={versao}
