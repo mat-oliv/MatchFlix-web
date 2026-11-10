@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma.js';
-import { hashPassword, verifyPassword } from '../lib/password.js';
+import { hashPassword, precisaRefazerHash, verifyPassword } from '../lib/password.js';
 import { criarToken } from '../lib/token.js';
 import { exigirAutenticacao } from '../lib/auth.js';
 import { textos } from '../lib/idioma.js';
@@ -95,6 +95,15 @@ export async function authRoutes(app: FastifyInstance) {
 
     const senhaConfere = await verifyPassword(password, user.passwordHash);
     if (!senhaConfere) return reply.status(401).send(invalido);
+
+    // Conta com hash de antes do reforço (custo menor, formato antigo): a senha acabou de
+    // conferir, então o hash é refeito com o custo atual. Falha aqui não barra a entrada —
+    // o hash antigo continua válido e o próximo login tenta de novo.
+    if (precisaRefazerHash(user.passwordHash)) {
+      await prisma.user
+        .update({ where: { id: user.id }, data: { passwordHash: await hashPassword(password) } })
+        .catch((err) => request.log.warn({ err }, 'não foi possível refazer o hash da senha'));
+    }
 
     return reply.send({ token: criarToken(user.id), user: { id: user.id, username } });
   });

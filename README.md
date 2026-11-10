@@ -19,6 +19,7 @@
 
 - [Arquitetura](#arquitetura)
 - [Decisões de system design](#decisões-de-system-design)
+- [Segurança](#segurança)
 - [Banco de dados](#banco-de-dados)
 - [CI/CD](#cicd)
 - [Stack](#stack)
@@ -114,10 +115,55 @@ passava. A segunda camada fecha esse buraco.
 
 Senhas com `scrypt` e tokens assinados com HMAC, ambos do `node:crypto`. O `userId` sai
 sempre do token, nunca do corpo da requisição. Chaves de terceiros (TMDB, Gemini) ficam
-**só na API** — o navegador nunca as vê.
+**só na API** — o navegador nunca as vê. O detalhe está em [Segurança](#segurança).
 
 **Por quê:** menos dependência nativa para quebrar em build/container, e nenhuma rota
 confia no cliente para dizer quem ele é.
+
+---
+
+## Segurança
+
+### Senhas: só o hash é guardado
+
+**A senha nunca é gravada** — nem no banco, nem em log. No cadastro, a API passa a senha
+por uma função de hash de mão única e guarda só o resultado; no login, refaz o hash com a
+senha digitada e compara. Quem tivesse acesso ao banco inteiro veria isto, e não a senha:
+
+```
+$scrypt$ln=17,r=8,p=1$<salt>$<hash>
+```
+
+| Camada | O que faz | Contra o quê |
+| --- | --- | --- |
+| **scrypt** (`node:crypto`) | função de hash feita para senha: lenta e exigente de memória de propósito | ataque de força bruta com GPU/ASIC sobre um banco vazado |
+| **Custo OWASP** — N = 2¹⁷, r = 8, p = 1 | ~128 MiB e ~0,2 s por tentativa. Para quem entra, imperceptível; para quem testa milhões de senhas, proibitivo | dicionário e força bruta em escala |
+| **Salt aleatório** de 16 bytes por senha | duas pessoas com a mesma senha têm hashes diferentes | tabelas pré-calculadas (*rainbow tables*) e descobrir quem repete senha |
+| **Comparação em tempo constante** (`timingSafeEqual`) | a resposta leva o mesmo tempo acerte ou erre o primeiro byte | ataque de temporização |
+| **Parâmetros gravados junto do hash** (formato PHC) | subir o custo no futuro não invalida as senhas existentes | — |
+| **Atualização transparente** | conta com hash antigo, de custo menor, é refeita com o custo atual no próximo login, sem ninguém trocar de senha | hash fraco esquecido no banco |
+
+**Por que scrypt e não SHA-256:** hash comum é rápido de propósito — uma GPU calcula
+bilhões por segundo, e uma senha de 8 caracteres cai em horas. O scrypt é lento e, mais
+importante, exige memória: paralelizar milhares de tentativas numa GPU deixa de compensar.
+
+### Sessão e acesso
+
+- **Token assinado com HMAC-SHA256**, validade de 7 dias. O segredo (`AUTH_SECRET`) vive só
+  no servidor; token adulterado ou vencido é recusado.
+- **Quem você é sai do token, nunca do corpo da requisição.** Nenhuma rota aceita um
+  `userId` vindo do navegador, e as rotas de grupo conferem se quem pede é membro.
+- **Login com erro genérico** ("usuário ou senha inválidos"): a resposta não diz qual dos
+  dois estava errado.
+- **Nenhuma rota devolve o hash**: toda consulta de usuário escolhe os campos que saem.
+
+### Segredos fora do código
+
+- **Chaves de terceiros (TMDB, Gemini), banco e `AUTH_SECRET` ficam só na API**, em
+  variáveis de ambiente. O site publicado é JavaScript público e só conhece a URL da API.
+- **Nenhum `.env` é versionado** — só os `.env.example`, com os campos vazios.
+- **Erro interno não vaza detalhe**: o motivo real vai para o log do servidor, e o
+  navegador recebe uma frase genérica, sem caminho de arquivo nem nome de coluna.
 
 ---
 
